@@ -34,6 +34,7 @@ import java.util.Map;
 
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.httpclient.AlfrescoHttpClient;
+import org.alfresco.httpclient.AuthenticationException;
 import org.alfresco.httpclient.HttpClientFactory;
 import org.alfresco.repo.cache.MemoryCache;
 import org.alfresco.repo.dictionary.DictionaryComponent;
@@ -44,6 +45,8 @@ import org.alfresco.repo.tenant.SingleTServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.solr.AlfrescoSolrDataModel;
 import org.alfresco.solr.client.SOLRAPIClient;
+import org.alfresco.solr.client.Transaction;
+import org.alfresco.solr.client.Transactions;
 import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
@@ -59,6 +62,7 @@ import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
 import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.apache.manifoldcf.crawler.system.Logging;
 import org.apache.solr.core.SolrResourceLoader;
+import org.json.JSONException;
 
 public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnector {
 
@@ -85,6 +89,8 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   
   /** Alfresco Tenant domain */
   protected String tenantDomain = null;
+
+  protected SOLRAPIClient solrapiClient = null;
   
   /**
    * TODO we have to change below for our new session object
@@ -140,40 +146,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    */
   public AlfrescoWebScriptsRepositoryConnector() {
     super();
-    String alfrescoHost = "localhost";
-    String baseUrl = "alfresco";
-    int alfrescoPort = 8080;
-    int alfrescoPortSSL = 8043;
-    int maxTotalConnections = 40;
-    int maxHostConnections = 40;
-    int socketTimeout = -1;
-
-    HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
-        null, null, null, null, alfrescoHost, alfrescoPort, alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
-
-    AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(alfrescoHost, alfrescoPortSSL);
-    repoClient.setBaseUrl(baseUrl);
-
-    TenantService tenantService = new SingleTServiceImpl();
-    NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
-    namespaceDAO.setTenantService(tenantService);
-    namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
-
-    DictionaryDAOImpl dictionaryDAO = new DictionaryDAOImpl(namespaceDAO);
-    dictionaryDAO.setTenantService(tenantService);
-    dictionaryDAO.setDictionaryRegistryCache(new MemoryCache<String, DictionaryDAOImpl.DictionaryRegistry>());
-    dictionaryDAO.setDefaultAnalyserResourceBundleName("alfresco/model/dataTypeAnalyzers");
-
-    //@TODO - Currently this classloader is not valid, check method below; it relies on the presence of trackModel logic,
-    // which is not implemented yet
-    dictionaryDAO.setResourceClassLoader(getResourceClassLoader());
-
-    DictionaryComponent dictionaryComponent = new DictionaryComponent();
-    dictionaryComponent.setDictionaryDAO(dictionaryDAO);
-    //@TODO - cannot find StaticMessageLookup
-    //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
-
-    SOLRAPIClient client = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
   }
 
   /**
@@ -253,7 +225,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   }
 
   /** Connect.
-   *@param configParameters is the set of configuration parameters, which
+   * @param configParams is the set of configuration parameters, which
    * in this case describe the target appliance, basic auth configuration, etc.  (This formerly came
    * out of the ini file.)
    */
@@ -324,8 +296,41 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
             + " required but not set");
     
       
-    String endpoint = protocol+"://"+server+":"+port+path;
-    
+    //String endpoint = protocol+"://"+server+":"+port+path;
+    int alfrescoPort = 8080;
+    int alfrescoPortSSL = 8043;
+    int maxTotalConnections = 40;
+    int maxHostConnections = 40;
+    int socketTimeout = -1;
+
+
+    HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
+          null, null, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
+
+      AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, alfrescoPortSSL);
+      repoClient.setBaseUrl(path);
+
+      TenantService tenantService = new SingleTServiceImpl();
+      NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
+      namespaceDAO.setTenantService(tenantService);
+      namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
+
+      DictionaryDAOImpl dictionaryDAO = new DictionaryDAOImpl(namespaceDAO);
+      dictionaryDAO.setTenantService(tenantService);
+      dictionaryDAO.setDictionaryRegistryCache(new MemoryCache<String, DictionaryDAOImpl.DictionaryRegistry>());
+      dictionaryDAO.setDefaultAnalyserResourceBundleName("alfresco/model/dataTypeAnalyzers");
+
+      //@TODO - Currently this classloader is not valid, check method below; it relies on the presence of trackModel logic,
+      // which is not implemented yet
+      dictionaryDAO.setResourceClassLoader(getResourceClassLoader());
+
+      DictionaryComponent dictionaryComponent = new DictionaryComponent();
+      dictionaryComponent.setDictionaryDAO(dictionaryDAO);
+      //@TODO - cannot find StaticMessageLookup
+      //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
+
+      this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
+
     /**
      * TODO we have to change the SOAP API implementation
      */
@@ -448,23 +453,45 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    *@param spec is a document specification (that comes from the job).
    *@param startTime is the beginning of the time range to consider, inclusive.
    *@param endTime is the end of the time range to consider, exclusive.
-   *@param jobMode is an integer describing how the job is being run, whether continuous or once-only.
    */
   @Override
   public void addSeedDocuments(ISeedingActivity activities,
       DocumentSpecification spec, long startTime, long endTime)
       throws ManifoldCFException, ServiceInterruption {
 
-    String luceneQuery = StringUtils.EMPTY;
-    int i = 0;
-    while (i < spec.getChildCount()) {
-      SpecificationNode sn = spec.getChild(i);
-      if (sn.getType().equals(JOB_STARTPOINT_NODE_TYPE)) {
-        luceneQuery = sn.getAttributeValue(AlfrescoConfig.LUCENE_QUERY_PARAM);
-        break;
-      }
-      i++;
+    try {
+      Long fromCommitTime = null;
+      Long minTxnId = null;
+      Long toCommitTime = null;
+      Long maxTxnId = null;
+      int maxResults = 1000;
+
+      Transactions transactions = null;
+      do {
+        transactions = this.solrapiClient.getTransactions(fromCommitTime,minTxnId,toCommitTime,maxTxnId,maxResults);
+        for(Transaction transaction : transactions.getTransactions()) {
+          transaction.getId();
+          transaction.getDeletes();
+          transaction.getUpdates();
+        }
+      } while((transactions.getTransactions().size() == 0) && (startTime < endTime));
+    } catch (AuthenticationException e) {
+      throw new ManifoldCFException(e);
+    } catch (IOException e) {
+      throw new ManifoldCFException(e);
+    } catch (JSONException e) {
+      throw new ManifoldCFException(e);
     }
+//    String luceneQuery = StringUtils.EMPTY;
+//    int i = 0;
+//    while (i < spec.getChildCount()) {
+//      SpecificationNode sn = spec.getChild(i);
+//      if (sn.getType().equals(JOB_STARTPOINT_NODE_TYPE)) {
+//        luceneQuery = sn.getAttributeValue(AlfrescoConfig.LUCENE_QUERY_PARAM);
+//        break;
+//      }
+//      i++;
+//    }
 
     /**
      * TODO - here we have to execute the query and navigating results we can add other seed document to re-crawl
@@ -851,7 +878,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    *@param spec is the document specification.
    *@param scanOnly is an array corresponding to the document identifiers.  It is set to true to indicate when the processing
    * should only find other references, and should not actually call the ingestion methods.
-   *@param jobMode is an integer describing how the job is being run, whether continuous or once-only.
    */
   @Override
   public void processDocuments(String[] documentIdentifiers, String[] versions,
