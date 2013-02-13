@@ -19,15 +19,31 @@
  */
 package org.apache.manifoldcf.crawler.connectors.alfrescowebscripts;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InterruptedIOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.alfresco.error.AlfrescoRuntimeException;
+import org.alfresco.httpclient.AlfrescoHttpClient;
+import org.alfresco.httpclient.HttpClientFactory;
+import org.alfresco.repo.cache.MemoryCache;
+import org.alfresco.repo.dictionary.DictionaryComponent;
+import org.alfresco.repo.dictionary.DictionaryDAOImpl;
+import org.alfresco.repo.dictionary.NamespaceDAO;
+import org.alfresco.repo.dictionary.NamespaceDAOImpl;
+import org.alfresco.repo.tenant.SingleTServiceImpl;
+import org.alfresco.repo.tenant.TenantService;
+import org.alfresco.solr.AlfrescoSolrDataModel;
+import org.alfresco.solr.client.SOLRAPIClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
@@ -42,6 +58,7 @@ import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
 import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.apache.manifoldcf.crawler.system.Logging;
+import org.apache.solr.core.SolrResourceLoader;
 
 public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnector {
 
@@ -123,6 +140,70 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    */
   public AlfrescoWebScriptsRepositoryConnector() {
     super();
+    String alfrescoHost = "localhost";
+    String baseUrl = "alfresco";
+    int alfrescoPort = 8080;
+    int alfrescoPortSSL = 8043;
+    int maxTotalConnections = 40;
+    int maxHostConnections = 40;
+    int socketTimeout = -1;
+
+    HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
+        null, null, null, null, alfrescoHost, alfrescoPort, alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
+
+    AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(alfrescoHost, alfrescoPortSSL);
+    repoClient.setBaseUrl(baseUrl);
+
+    TenantService tenantService = new SingleTServiceImpl();
+    NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
+    namespaceDAO.setTenantService(tenantService);
+    namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
+
+    DictionaryDAOImpl dictionaryDAO = new DictionaryDAOImpl(namespaceDAO);
+    dictionaryDAO.setTenantService(tenantService);
+    dictionaryDAO.setDictionaryRegistryCache(new MemoryCache<String, DictionaryDAOImpl.DictionaryRegistry>());
+    dictionaryDAO.setDefaultAnalyserResourceBundleName("alfresco/model/dataTypeAnalyzers");
+
+    //@TODO - Currently this classloader is not valid, check method below; it relies on the presence of trackModel logic,
+    // which is not implemented yet
+    dictionaryDAO.setResourceClassLoader(getResourceClassLoader());
+
+    DictionaryComponent dictionaryComponent = new DictionaryComponent();
+    dictionaryComponent.setDictionaryDAO(dictionaryDAO);
+    //@TODO - cannot find StaticMessageLookup
+    //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
+
+    SOLRAPIClient client = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
+  }
+
+  /**
+   * @return
+   */
+  public ClassLoader getResourceClassLoader()
+  {
+    //@TODO - tweak here location, if necessary at all
+    File f = new File("alfrescoResources");
+    if (f.canRead() && f.isDirectory())
+    {
+
+      URL[] urls = new URL[1];
+
+      try
+      {
+        URL url = f.toURI().normalize().toURL();
+        urls[0] = url;
+      }
+      catch (MalformedURLException e)
+      {
+        throw new AlfrescoRuntimeException("Failed to add resources to classpath ", e);
+      }
+
+      return URLClassLoader.newInstance(urls, this.getClass().getClassLoader());
+    }
+    else
+    {
+      return this.getClass().getClassLoader();
+    }
   }
 
   /** 
