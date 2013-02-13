@@ -1,0 +1,5 @@
+#NOTE: This is an internal implementation file, its format can be changed without prior notice.
+#Tue Feb 12 09:59:07 CET 2013
+mcf-pull-agent-1.1.1.jar>=
+mcf-pull-agent-1.1.1-tests.jar>=
+mcf-pull-agent-1.1.1.pom>=

@@ -28,7 +28,7 @@
   
   <groupId>org.apache.manifoldcf</groupId>
   <artifactId>mcf-alfresco-webscript-connector</artifactId>
-  <version>1.1</version>
+  <version>1.1.1</version>
   <packaging>jar</packaging>
   
   <modelVersion>4.0.0</modelVersion>

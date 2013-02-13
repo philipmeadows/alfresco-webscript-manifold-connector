@@ -1,0 +1,5 @@
+#NOTE: This is an internal implementation file, its format can be changed without prior notice.
+#Tue Feb 12 09:58:21 CET 2013
+mcf-core-1.1.1.jar>=
+mcf-core-1.1.1-tests.jar>=
+mcf-core-1.1.1.pom>=
