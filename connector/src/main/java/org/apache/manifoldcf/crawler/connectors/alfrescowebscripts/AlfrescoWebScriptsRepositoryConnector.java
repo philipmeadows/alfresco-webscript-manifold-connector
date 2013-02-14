@@ -64,7 +64,7 @@ import org.apache.manifoldcf.crawler.system.Logging;
 import org.apache.solr.core.SolrResourceLoader;
 import org.json.JSONException;
 
-public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnector {
+public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnector {
 
   /** Fetch activity */
   public final static String ACTIVITY_FETCH = "fetch";
@@ -106,9 +106,9 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   // Tabs
   
   /** The Lucene Query label for the configuration tab of the job settings */
-  private static final String TAB_LABEL_LUCENE_QUERY_RESOURCE = "AlfrescoWebScriptConnector.LuceneQuery";
+  private static final String TAB_LABEL_LUCENE_QUERY_RESOURCE = "AlfrescoWebscriptConnector.LuceneQuery";
   /** Alfresco Server configuration tab name */
-  private static final String ALFRESCO_SERVER_TAB_RESOURCE = "AlfrescoWebScriptConnector.Server";
+  private static final String ALFRESCO_SERVER_TAB_RESOURCE = "AlfrescoWebscriptConnector.Server";
 
   // Velocity template names
 
@@ -144,7 +144,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   /**
    * Constructor
    */
-  public AlfrescoWebScriptsRepositoryConnector() {
+  public AlfrescoWebscriptsRepositoryConnector() {
     super();
   }
 
