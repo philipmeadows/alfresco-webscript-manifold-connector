@@ -25,7 +25,7 @@ Deploy and configure the connector
 cp target/mcf-alfresco-webscript-connector-1.1.1-jar-with-dependencies.jar $MANIFOLD_HOME/connector-lib
 ```
 
-edit <code>$MANIFOLD_HOMEconnectors.xml</code> and add
+edit <code>$MANIFOLD_HOME/connectors.xml</code> and add
 
 ```xml
 <repositoryconnector
