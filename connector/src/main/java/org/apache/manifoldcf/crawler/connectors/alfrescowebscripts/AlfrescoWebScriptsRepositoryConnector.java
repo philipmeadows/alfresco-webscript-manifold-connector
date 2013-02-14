@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.alfresco.encryption.KeyStoreParameters;
+import org.alfresco.encryption.ssl.SSLEncryptionParameters;
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.httpclient.AlfrescoHttpClient;
 import org.alfresco.httpclient.AuthenticationException;
@@ -45,6 +47,7 @@ import org.alfresco.repo.tenant.SingleTServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.solr.AlfrescoSolrDataModel;
 import org.alfresco.solr.client.SOLRAPIClient;
+import org.alfresco.solr.client.SolrKeyResourceLoader;
 import org.alfresco.solr.client.Transaction;
 import org.alfresco.solr.client.Transactions;
 import org.apache.commons.lang.StringUtils;
@@ -303,12 +306,25 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
     int maxHostConnections = 40;
     int socketTimeout = -1;
 
+    String sslKeyStoreType = "JCEKS";
+    String sslKeyStoreProvider = "";
+    String sslKeyStoreLocation = "ssl.repo.client.keystore";
+    String sslKeyStorePasswordFileLocation = "ssl-keystore-passwords.properties";
+    String sslTrustStoreType = "JCEKS";
+    String sslTrustStoreProvider = "";
+    String sslTrustStoreLocation = "ssl.repo.client.truststore";
+    String sslTrustStorePasswordFileLocation = "ssl-truststore-passwords.properties";
+
+    KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", sslKeyStoreType, sslKeyStoreProvider, sslKeyStorePasswordFileLocation, sslKeyStoreLocation);
+    KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", sslTrustStoreType, sslTrustStoreProvider, sslTrustStorePasswordFileLocation, sslTrustStoreLocation);
+    SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
+    SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader("."));
 
     HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
-          null, null, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
+    sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
 
-      AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, alfrescoPortSSL);
-      repoClient.setBaseUrl(path);
+    AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, alfrescoPortSSL);
+    repoClient.setBaseUrl(path);
 
       TenantService tenantService = new SingleTServiceImpl();
       NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
