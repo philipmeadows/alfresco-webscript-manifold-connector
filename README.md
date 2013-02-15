@@ -34,5 +34,17 @@ class="org.apache.manifoldcf.crawler.connectors.alfrescowebscripts.AlfrescoWebSc
 ```
 
 ```
+create a new <code>conf</code> folder in <code>$MANIFOLD_HOME/example/lib</code> 
+```
+
+```
+copy in the new <code>conf</code> folder all these files related to the keystore configuration of your Alfresco instance:
+-ssl-keystore-passwords.properties
+-ssl-truststore-passwords.properties
+-ssl.repo.client.keystore
+-ssl.repo.client.truststore
+```
+
+```
 java -jar $MANIFOLD_HOME/example/start.jar
 ```
