@@ -117,6 +117,15 @@
             <dest>target/classes</dest>
             <src>connector/src/main/native2ascii</src>
         </configuration>
+        <dependencies>
+						<dependency>
+						<groupId>com.sun</groupId>
+						<artifactId>tools</artifactId>
+						<version>1.7.0</version>
+						<scope>system</scope>
+						<systemPath>${java.home}/../lib/tools.jar</systemPath>
+						</dependency>
+        </dependencies>
         <executions>
             <execution>
                 <id>native2ascii-utf8</id>
