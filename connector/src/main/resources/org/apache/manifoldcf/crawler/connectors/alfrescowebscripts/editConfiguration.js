@@ -26,50 +26,50 @@ function checkConfigForSave()
 {
   if (editconnection.username.value == "")
   {
-    alert("username null");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.TheUsernameMustNotBeNull'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.username.focus();
     return false;
   }
   if (editconnection.password.value == "")
   {
-    alert("password null");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.ThePasswordMustNotBeNull'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.password.focus();
     return false;
   }
   if (editconnection.server.value =="")
   {
-    alert("server null");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.ServerNameMustNotBeNull'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.server.focus();
     return false;
   }
   else if(!editconnection.server.value.indexOf('/')==-1)
   {
-    alert("server not valid");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.ServerNameCantContainSlash'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.server.focus();
     return false;
   }
   if (editconnection.port.value == "")
   {
-    alert("port null");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.ThePortMustNotBeNull'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.port.focus();
     return false;
   }
   else if (!isInteger(editconnection.port.value))
   {
-    alert("port not a number");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.TheServerPortMustBeAValidInteger'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.port.focus();
     return false;
   }
   if(editconnection.path.value == "")
   {
-    alert("path null");
-    SelectTab("AlfrescoWebscriptConnector.Server");
+    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.PathMustNotBeNull'))");
+    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
     editconnection.path.focus();
     return false;
   }

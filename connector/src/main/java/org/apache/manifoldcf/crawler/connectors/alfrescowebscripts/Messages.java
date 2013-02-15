@@ -30,8 +30,8 @@ import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
  */
 public class Messages extends org.apache.manifoldcf.ui.i18n.Messages
 {
-  public static final String DEFAULT_BUNDLE_NAME="org.apache.manifoldcf.crawler.connectors.alfrescowebscript.common";
-  public static final String DEFAULT_PATH_NAME="org.apache.manifoldcf.crawler.connectors.alfrescowebscript";
+  public static final String DEFAULT_BUNDLE_NAME="org.apache.manifoldcf.crawler.connectors.alfrescowebscripts.common";
+  public static final String DEFAULT_PATH_NAME="org.apache.manifoldcf.crawler.connectors.alfrescowebscripts";
   
   /** Constructor - do no instantiate
   */
