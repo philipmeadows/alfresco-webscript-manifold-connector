@@ -477,7 +477,14 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
 
       Transactions transactions = null;
       do {
+        Logging.connectors.info("Fetching transactions: " +
+            "fromCommitTime:"+fromCommitTime+
+            ",minTxnId:"+minTxnId+
+            ",toCommitTime:"+toCommitTime+
+            ",maxTxnId:"+maxTxnId+
+            ",maxResults:"+maxResults);
         transactions = this.solrapiClient.getTransactions(fromCommitTime,minTxnId,toCommitTime,maxTxnId,maxResults);
+        Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
         for(Transaction transaction : transactions.getTransactions()) {
           transaction.getId();
           transaction.getDeletes();
