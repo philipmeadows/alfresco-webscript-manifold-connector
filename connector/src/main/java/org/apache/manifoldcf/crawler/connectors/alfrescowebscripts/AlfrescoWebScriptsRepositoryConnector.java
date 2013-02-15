@@ -21,13 +21,10 @@ package org.apache.manifoldcf.crawler.connectors.alfrescowebscripts;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,17 +38,14 @@ import org.alfresco.httpclient.HttpClientFactory;
 import org.alfresco.repo.cache.MemoryCache;
 import org.alfresco.repo.dictionary.DictionaryComponent;
 import org.alfresco.repo.dictionary.DictionaryDAOImpl;
-import org.alfresco.repo.dictionary.NamespaceDAO;
 import org.alfresco.repo.dictionary.NamespaceDAOImpl;
 import org.alfresco.repo.tenant.SingleTServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
-import org.alfresco.solr.AlfrescoSolrDataModel;
 import org.alfresco.solr.client.SOLRAPIClient;
 import org.alfresco.solr.client.SolrKeyResourceLoader;
 import org.alfresco.solr.client.Transaction;
 import org.alfresco.solr.client.Transactions;
 import org.apache.commons.lang.StringUtils;
-import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.core.interfaces.ConfigParams;
 import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
@@ -93,13 +87,8 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   /** Alfresco Tenant domain */
   protected String tenantDomain = null;
 
+  /** Alfresco Solr API Client */
   protected SOLRAPIClient solrapiClient = null;
-  
-  /**
-   * TODO we have to change below for our new session object
-   */
-  //protected AuthenticationDetails session = null;
-  //protected Object session = null;
   
   protected static final long timeToRelease = 300000L;
   protected long lastSessionFetch = -1L;
@@ -110,6 +99,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   
   /** The Lucene Query label for the configuration tab of the job settings */
   private static final String TAB_LABEL_LUCENE_QUERY_RESOURCE = "AlfrescoWebscriptConnector.LuceneQuery";
+  
   /** Alfresco Server configuration tab name */
   private static final String ALFRESCO_SERVER_TAB_RESOURCE = "AlfrescoWebscriptConnector.Server";
 
@@ -384,10 +374,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     long currentTime = System.currentTimeMillis();
     if (currentTime >= lastSessionFetch + timeToRelease) {
-        /**
-         * TODO
-         */
-        //AuthenticationUtils.endSession();
+        this.solrapiClient=null;
         lastSessionFetch = -1L;
     }
   }
@@ -403,10 +390,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
         throw new ManifoldCFException( "Alfresco: Error during checking the connection.");
       }
       
-      /**
-       * TODO
-       */
-      //AuthenticationUtils.endSession();
+      this.solrapiClient=null;
       return;
     }
   }
@@ -422,11 +406,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     long currentTime = System.currentTimeMillis();
     if (currentTime >= lastSessionFetch + timeToRelease) {
         try {
-          /**
-           * TODO
-           */
-          //AuthenticationUtils.endSession();
-//          session = null;
+          this.solrapiClient=null;
           lastSessionFetch = -1L;
         } catch (Exception e) {
           Logging.connectors.error(
