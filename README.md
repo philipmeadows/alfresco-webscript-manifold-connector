@@ -7,8 +7,8 @@ Alfresco Solr API Repository Connector for Apache ManifoldCF
 Install Manifold
 ---
 ```
-curl http://www.apache.org/dist/manifoldcf/apache-manifoldcf-1.0.1-bin.zip > manifold-bin-1.0.1.zip
-unzip manifold-bin-1.0.1.zip
+curl http://www.apache.org/dist/manifoldcf/apache-manifoldcf-1.1.1-bin.zip > manifold-bin-1.1.1.zip
+unzip manifold-bin-1.1.1.zip
 ```
 
 Install the Alfresco Webscript Connector
@@ -30,7 +30,7 @@ edit <code>$MANIFOLD_HOME/connectors.xml</code> and add
 ```xml
 <repositoryconnector
 name="AlfrescoWebscript"
-class="org.apache.manifoldcf.crawler.connectors.alfrescowebscripts.AlfrescoWebscriptsRepositoryConnector"/>
+class="org.apache.manifoldcf.crawler.connectors.alfrescowebscripts.AlfrescoWebScriptsRepositoryConnector"/>
 ```
 
 ```
