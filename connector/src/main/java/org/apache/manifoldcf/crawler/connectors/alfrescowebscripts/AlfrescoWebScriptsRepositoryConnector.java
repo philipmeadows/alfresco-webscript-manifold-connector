@@ -99,7 +99,7 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
    * TODO we have to change below for our new session object
    */
   //protected AuthenticationDetails session = null;
-  protected Object session = null;
+  //protected Object session = null;
   
   protected static final long timeToRelease = 300000L;
   protected long lastSessionFetch = -1L;
@@ -210,12 +210,12 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
    */
   @Override
   public void disconnect() throws ManifoldCFException {
-    if (session != null) {
-      
-      //AuthenticationUtils.endSession();
-      session = null;
+//    if (session != null) {
+//
+//      //AuthenticationUtils.endSession();
+//      session = null;
       lastSessionFetch = -1L;
-    }
+//    }
 
     username = null;
     password = null;
@@ -266,7 +266,7 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
 
   /** Set up a session */
   protected void getSession() throws ManifoldCFException, ServiceInterruption {
-    if (session == null) {
+    if (this.solrapiClient == null) {
       // Check for parameter validity
 
       if (StringUtils.isEmpty(username))
@@ -384,12 +384,10 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
 
     long currentTime = System.currentTimeMillis();
     if (currentTime >= lastSessionFetch + timeToRelease) {
-        
         /**
          * TODO
          */
         //AuthenticationUtils.endSession();
-        session = null;
         lastSessionFetch = -1L;
     }
   }
@@ -398,12 +396,8 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
       ServiceInterruption {
     while (true) {
       getSession();
-      /**
-       * TODO
-       */
-      String ticket = ""; //AuthenticationUtils.getTicket();
-      
-      if(StringUtils.isEmpty(ticket)){
+
+      if(this.solrapiClient == null){
         Logging.connectors.error(
             "Alfresco: Error during checking the connection.");
         throw new ManifoldCFException( "Alfresco: Error during checking the connection.");
@@ -413,7 +407,6 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
        * TODO
        */
       //AuthenticationUtils.endSession();
-      session=null;
       return;
     }
   }
@@ -433,7 +426,7 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
            * TODO
            */
           //AuthenticationUtils.endSession();
-          session = null;
+//          session = null;
           lastSessionFetch = -1L;
         } catch (Exception e) {
           Logging.connectors.error(
