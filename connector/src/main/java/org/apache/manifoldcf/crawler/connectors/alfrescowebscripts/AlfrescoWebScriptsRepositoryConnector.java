@@ -67,7 +67,7 @@ import org.apache.manifoldcf.crawler.system.Logging;
 import org.apache.solr.core.SolrResourceLoader;
 import org.json.JSONException;
 
-public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnector {
+public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnector {
 
   /** Fetch activity */
   public final static String ACTIVITY_FETCH = "fetch";
@@ -147,7 +147,7 @@ public class AlfrescoWebscriptsRepositoryConnector extends BaseRepositoryConnect
   /**
    * Constructor
    */
-  public AlfrescoWebscriptsRepositoryConnector() {
+  public AlfrescoWebScriptsRepositoryConnector() {
     super();
   }
 
