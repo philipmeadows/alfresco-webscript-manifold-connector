@@ -130,9 +130,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
   /** Read activity */
   protected final static String ACTIVITY_READ = "read document";
-  
-  /** Separator used when a node has more than one content stream. More than one d:content property */
-  private static final String INGESTION_SEPARATOR_FOR_MULTI_BINARY = ";";
 
   /**
    * Constructor
@@ -288,9 +285,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.PATH_PARAM
             + " required but not set");
     
-      
-    //String endpoint = protocol+"://"+server+":"+port+path;
-    int alfrescoPort = 8080;
     int alfrescoPortSSL = 8043;
     int maxTotalConnections = 40;
     int maxHostConnections = 40;
@@ -337,31 +331,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
       this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
 
-    /**
-     * TODO we have to change the SOAP API implementation
-     */
-    
-//    WebServiceFactory.setEndpointAddress(endpoint);
-//    try {
-//      AuthenticationUtils.startSession(username, password);
-//      session = AuthenticationUtils.getAuthenticationDetails();
-//    } catch (AuthenticationFault e) {
-//      Logging.connectors.warn(
-//          "Alfresco: Error during authentication. Username: "+username + ", endpoint: "+endpoint+". "
-//              + e.getMessage(), e);
-//      throw new ManifoldCFException("Alfresco: Error during authentication. Username: "+username + ", endpoint: "+endpoint+". "
-//          + e.getMessage(), e);
-//    } catch (WebServiceException e){
-//      Logging.connectors.warn(
-//          "Alfresco: Error during trying to authenticate the user. Username: "+username + ", endpoint: "+endpoint
-//          +". Please check the connector parameters. " 
-//          + e.getMessage(), e);
-//      throw new ManifoldCFException("Alfresco: Error during trying to authenticate the user. Username: "+username + ", endpoint: "+endpoint
-//          +". Please check the connector parameters. "
-//          + e.getMessage(), e);
-//    }
-    
-    lastSessionFetch = System.currentTimeMillis();
+      lastSessionFetch = System.currentTimeMillis();
     }
   }
 
@@ -450,9 +420,9 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     try {
       Long fromCommitTime = null;
-      Long minTxnId = null;
+      Long minTxnId = new Long(0);
       Long toCommitTime = null;
-      Long maxTxnId = null;
+      Long maxTxnId = new Long(200);
       int maxResults = 1000;
 
       Transactions transactions = null;
@@ -476,6 +446,8 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     } catch (IOException e) {
       throw new ManifoldCFException(e);
     } catch (JSONException e) {
+      throw new ManifoldCFException(e);
+    } catch (Exception e){
       throw new ManifoldCFException(e);
     }
 //    String luceneQuery = StringUtils.EMPTY;
