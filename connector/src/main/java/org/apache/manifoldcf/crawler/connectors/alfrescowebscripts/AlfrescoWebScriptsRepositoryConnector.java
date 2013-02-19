@@ -288,7 +288,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     int alfrescoPortSSL = 8043;
     int maxTotalConnections = 40;
     int maxHostConnections = 40;
-    int socketTimeout = -1;
+    int socketTimeout = 60000;
 
     String sslKeyStoreType = "JCEKS";
     String sslKeyStoreProvider = "";
@@ -418,12 +418,20 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       DocumentSpecification spec, long startTime, long endTime)
       throws ManifoldCFException, ServiceInterruption {
 
+    getSession();
+    
     try {
-      Long fromCommitTime = null;
-      Long minTxnId = new Long(0);
-      Long toCommitTime = null;
-      Long maxTxnId = new Long(200);
-      int maxResults = 1000;
+      
+      //Mon Jun 18 2007 00:00:00 GMT-0400 (Eastern Daylight Time)
+      Long fromCommitTime = new Long("1182139200000");
+      
+      Long minTxnId = new Long(1);
+      
+      //Wed Feb 06 2013 12:53:11 GMT+0100 (CET)
+      Long toCommitTime = new Long("1360151591863");
+      Long maxTxnId = new Long(1000);
+      
+      int maxResults = 100;
 
       Transactions transactions = null;
       do {
