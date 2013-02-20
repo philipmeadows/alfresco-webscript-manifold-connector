@@ -17,56 +17,31 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <!-- 
-  <parent>
-    <groupId>org.apache.manifoldcf</groupId>
-    <artifactId>mcf-connectors</artifactId>
-    <version>1.2-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
-  -->
-  
   <groupId>org.apache.manifoldcf</groupId>
-  <artifactId>mcf-alfresco-webscript-connector</artifactId>
+  <artifactId>mcf-alfresco-webscript-connector-parent</artifactId>
   <version>1.1.1</version>
-  <packaging>jar</packaging>
-  
-  <modelVersion>4.0.0</modelVersion>
-  
+  <packaging>pom</packaging>
+  <description>Manifold Connector for Alfresco using Solr Webscripts - Parent POM</description>
+  <name>Alfresco Webscript Connector Parent POM</name>
+
+  <parent>
+    <groupId>org.alfresco.maven</groupId>
+    <artifactId>alfresco-sdk-parent</artifactId>
+    <version>1.0</version>
+  </parent>
+
+  <modules>
+    <module>mcf-alfresco-webscript-connector</module>
+    <module>alfresco-instance</module>
+  </modules>
+
   <properties>
     <manifold.version>1.1.1</manifold.version>
     <alfresco.version>4.2.c</alfresco.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!-- dependency versions -->
-    <junit.version>4.8.2</junit.version>
-    <postgresql.version>9.1-901.jdbc4</postgresql.version>
-    <mysql.version>5.1.18</mysql.version>
-    <hsqldb.version>2.2.9</hsqldb.version>
-    <derby.version>10.8.2.2</derby.version>
-    <jetty.version>7.5.4.v20111024</jetty.version>
-    <commons-codec.version>1.5</commons-codec.version>
-    <commons-io.version>2.1</commons-io.version>
-    <commons-logging.version>1.1.1</commons-logging.version>
-    <commons-collections.version>3.2.1</commons-collections.version>
-    <commons-fileupload.version>1.2.2</commons-fileupload.version>
-    <httpcomponent.version>4.2.3</httpcomponent.version>
-    <solr.version>4.1.0</solr.version>
-    <commons-el.version>1.0</commons-el.version>
-    <commons-lang.version>2.6</commons-lang.version>
-    <xalan.version>2.7.1</xalan.version>
-    <xerces.version>2.10.0</xerces.version>
-    <xml-apis.version>1.4.01</xml-apis.version>
-    <jtds.version>1.2.4</jtds.version>
-    <servlet-api.version>2.5</servlet-api.version>
-    <jstl.version>1.2</jstl.version>
-    <glassfish.version>2.1.v20091210</glassfish.version>
-    <log4j.version>1.2.16</log4j.version>
-    <jdbcpool.version>0.99</jdbcpool.version>
-    <json.version>20090211</json.version>
-    <velocity.version>1.7</velocity.version>
-    <slf4j.version>1.6.6</slf4j.version>
   </properties>
-  
+
   <developers>
     <developer>
       <name>Piergiorgio Lucidi</name>
@@ -81,9 +56,6 @@
       <url>http://about.me/maoo</url>
     </developer>
   </developers>
-  
-  
-  <name>ManifoldCF - Connectors - Alfresco WebScripts</name>
 
   <repositories>
     <repository>
@@ -96,170 +68,4 @@
     </repository>
   </repositories>
 
-  <build>
-    <sourceDirectory>${basedir}/connector/src/main/java</sourceDirectory>
-    <testSourceDirectory>${basedir}/connector/src/test/java</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>${basedir}/connector/src/main/resources</directory>
-        <includes>
-          <include>**/*.html</include>
-          <include>**/*.js</include>
-        </includes>
-      </resource>
-    </resources>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>native2ascii-maven-plugin</artifactId>
-        <version>1.0-alpha-1</version>
-        <configuration>
-            <dest>target/classes</dest>
-            <src>connector/src/main/native2ascii</src>
-        </configuration>
-        <dependencies>
-						<dependency>
-						<groupId>com.sun</groupId>
-						<artifactId>tools</artifactId>
-						<version>1.7.0</version>
-						<scope>system</scope>
-						<systemPath>${java.home}/../lib/tools.jar</systemPath>
-						</dependency>
-        </dependencies>
-        <executions>
-            <execution>
-                <id>native2ascii-utf8</id>
-                <goals>
-                    <goal>native2ascii</goal>
-                </goals>
-                <configuration>
-                    <encoding>UTF8</encoding>
-                    <includes>**/*.properties</includes>
-                </configuration>
-            </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>**/*Postgresql*.java</exclude>
-            <exclude>**/*MySQL*.java</exclude>
-          </excludes>
-          <forkMode>always</forkMode>
-          <workingDirectory>target/test-output</workingDirectory>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <descriptors>
-            <descriptor>assembly.xml</descriptor>
-          </descriptors>
-        </configuration>
-        <executions>
-          <execution>
-            <id>make-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
-        </plugin>
-    </plugins>
-  </build>
-
-  <dependencies>
-    <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>2.6</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.alfresco</groupId>
-      <artifactId>alfresco-solr-integration</artifactId>
-      <version>${alfresco.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.alfresco</groupId>
-      <artifactId>alfresco-core</artifactId>
-      <version>${alfresco.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-core</artifactId>
-      <version>${manifold.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-agents</artifactId>
-      <version>${manifold.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-pull-agent</artifactId>
-      <version>${manifold.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-ui-core</artifactId>
-      <version>${manifold.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-core</artifactId>
-      <version>${manifold.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-agents</artifactId>
-      <version>${manifold.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-pull-agent</artifactId>
-      <version>${manifold.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>postgresql</groupId>
-      <artifactId>postgresql</artifactId>
-      <version>${postgresql.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.hsqldb</groupId>
-      <artifactId>hsqldb</artifactId>
-      <version>${hsqldb.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.derby</groupId>
-      <artifactId>derby</artifactId>
-      <version>${derby.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>${mysql.version}</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
 </project>

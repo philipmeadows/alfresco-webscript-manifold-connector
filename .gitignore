@@ -6,4 +6,6 @@
 # Package Files #
 .classpath
 .project
-/target
+target
+alfresco-instance/alf_data_dev
+alfresco-instance/alfresco.log*
