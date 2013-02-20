@@ -457,6 +457,37 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
               ",TXN ID:"+node.getTxnId()+
               ",ID:"+node.getId()+
               ",status:"+node.getStatus());
+
+            NodeMetaDataParameters nmdp = new NodeMetaDataParameters();
+            nmdp.setFromNodeId(node.getId());
+            nmdp.setToNodeId(node.getId());
+            nmdp.setIncludeAclId(true);
+            nmdp.setIncludeAspects(true);
+            nmdp.setIncludeChildAssociations(false);
+            nmdp.setIncludeChildIds(true);
+            nmdp.setIncludeNodeRef(true);
+            nmdp.setIncludeOwner(true);
+            nmdp.setIncludeParentAssociations(true);
+            nmdp.setIncludePaths(true);
+            nmdp.setIncludeProperties(false);
+            nmdp.setIncludeType(true);
+            nmdp.setIncludeTxnId(true);
+            List<NodeMetaData> nodeMetaDatas = solrapiClient.getNodesMetaData(nmdp, 1);
+
+            for(NodeMetaData metaData : nodeMetaDatas) {
+              Logging.connectors.info("Indexing metadata: " +
+                  "Type:"+metaData.getType()+
+                  ",ACL ID:"+metaData.getAclId()+
+                  ",Paths:"+metaData.getPaths()+
+                  ",Owner:"+metaData.getOwner()+
+                  ",Tenant:"+metaData.getTenantDomain()+
+                  ",Ancestors (number):"+metaData.getAncestors().size()+
+                  ",Child assocs (number):"+metaData.getChildAssocs().size()+
+                  ",Parent assocs (number):"+metaData.getParentAssocs().size()+
+                  ",Aspects:"+metaData.getAspects()+
+                  ",Properties:"+metaData.getProperties());
+            }
+
         }
         lastTransactionId += maxResults;
       } while(transactions.getTransactions().size() > 0);

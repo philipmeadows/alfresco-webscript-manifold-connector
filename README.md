@@ -58,3 +58,8 @@ Finally to start Apache ManifoldCF use the following command:
 ```
 java -jar $MANIFOLD_HOME/example/start.jar
 ```
+
+Remember to set the valid pointers to the Alfresco instance:
+host: localhost
+port: 8080
+path: alfresco-instance
