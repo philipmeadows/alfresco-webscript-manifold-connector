@@ -415,91 +415,95 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     getSession();
     
-    try {
+//    try {
       
       //Mon Jun 18 2007 00:00:00 GMT-0400 (Eastern Daylight Time)
-      Long fromCommitTime = new Long("1182139200000");
-      
-      Long minTxnId = new Long(1);
-      
+      //Long fromCommitTime = new Long("1182139200000");
       //Wed Feb 06 2013 12:53:11 GMT+0100 (CET)
-      Long toCommitTime = new Long("1360151591863");
-      Long maxTxnId = new Long(1000);
-      
+      //Long toCommitTime = new Long("1360151591863");
+
+      //Long minTxnId = new Long(1);
+      //Long maxTxnId = new Long(1000);
+
       int maxResults = 100;
       long lastTransactionId = 0;
 
       Transactions transactions = null;
       do {
         Logging.connectors.info("Fetching transactions: " +
-            "fromCommitTime:"+fromCommitTime+
-            ",minTxnId:"+minTxnId+
-            ",toCommitTime:"+toCommitTime+
-            ",maxTxnId:"+maxTxnId+
+            ",lastTransactionId:"+lastTransactionId+
             ",maxResults:"+maxResults);
 
-        transactions = this.solrapiClient.getTransactions(null,lastTransactionId,null,lastTransactionId+maxResults,maxResults);
-        Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
-        GetNodesParameters getNodeParameters = new GetNodesParameters();
+        List<Node> nodes = null;
         ArrayList<Long> txs = new ArrayList<Long>();
-        getNodeParameters.setTransactionIds(txs);
-        getNodeParameters.setStoreProtocol(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getProtocol());
-        getNodeParameters.setStoreIdentifier(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getIdentifier());
-
-        for(Transaction transaction : transactions.getTransactions()) {
-          txs.add(transaction.getId());
+        try {
+          transactions = this.solrapiClient.getTransactions(null,lastTransactionId,null,lastTransactionId+maxResults,maxResults);
+          Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
+          GetNodesParameters getNodeParameters = new GetNodesParameters();
+          getNodeParameters.setTransactionIds(txs);
+          getNodeParameters.setStoreProtocol(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getProtocol());
+          getNodeParameters.setStoreIdentifier(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getIdentifier());
+          for(Transaction transaction : transactions.getTransactions()) {
+            txs.add(transaction.getId());
+          }
+          nodes = solrapiClient.getNodes(getNodeParameters, maxResults);
+        } catch (AuthenticationException e) {
+          Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
+        } catch (IOException e) {
+          Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
+        } catch (JSONException e) {
+          Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
         }
+        if (nodes != null) {
+          for (Node node : nodes) {
+            Logging.connectors.info("Indexing node: " +
+                "nodeRef:"+node.getNodeRef()+
+                ",TXN ID:"+node.getTxnId()+
+                ",ID:"+node.getId()+
+                ",status:"+node.getStatus());
 
-        List<Node> nodes = solrapiClient.getNodes(getNodeParameters, maxResults);
-        for (Node node : nodes) {
-          Logging.connectors.info("Indexing node: " +
-              "nodeRef:"+node.getNodeRef()+
-              ",TXN ID:"+node.getTxnId()+
-              ",ID:"+node.getId()+
-              ",status:"+node.getStatus());
-
-            NodeMetaDataParameters nmdp = new NodeMetaDataParameters();
-            nmdp.setFromNodeId(node.getId());
-            nmdp.setToNodeId(node.getId());
-            nmdp.setIncludeAclId(true);
-            nmdp.setIncludeAspects(true);
-            nmdp.setIncludeChildAssociations(false);
-            nmdp.setIncludeChildIds(true);
-            nmdp.setIncludeNodeRef(true);
-            nmdp.setIncludeOwner(true);
-            nmdp.setIncludeParentAssociations(true);
-            nmdp.setIncludePaths(true);
-            nmdp.setIncludeProperties(false);
-            nmdp.setIncludeType(true);
-            nmdp.setIncludeTxnId(true);
-            List<NodeMetaData> nodeMetaDatas = solrapiClient.getNodesMetaData(nmdp, 1);
-
-            for(NodeMetaData metaData : nodeMetaDatas) {
-              Logging.connectors.info("Indexing metadata: " +
-                  "Type:"+metaData.getType()+
-                  ",ACL ID:"+metaData.getAclId()+
-                  ",Paths:"+metaData.getPaths()+
-                  ",Owner:"+metaData.getOwner()+
-                  ",Tenant:"+metaData.getTenantDomain()+
-                  ",Ancestors (number):"+metaData.getAncestors().size()+
-                  ",Child assocs (number):"+metaData.getChildAssocs().size()+
-                  ",Parent assocs (number):"+metaData.getParentAssocs().size()+
-                  ",Aspects:"+metaData.getAspects()+
-                  ",Properties:"+metaData.getProperties());
+              NodeMetaDataParameters nmdp = new NodeMetaDataParameters();
+              nmdp.setFromNodeId(node.getId());
+              nmdp.setToNodeId(node.getId());
+              nmdp.setIncludeAclId(true);
+              nmdp.setIncludeAspects(true);
+              nmdp.setIncludeChildAssociations(false);
+              nmdp.setIncludeChildIds(true);
+              nmdp.setIncludeNodeRef(true);
+              nmdp.setIncludeOwner(true);
+              nmdp.setIncludeParentAssociations(true);
+              nmdp.setIncludePaths(true);
+              nmdp.setIncludeProperties(false);
+              nmdp.setIncludeType(true);
+              nmdp.setIncludeTxnId(true);
+            List<NodeMetaData> nodeMetaDatas = null;
+            try {
+              nodeMetaDatas = getNodesMetaData(nmdp);
+              for(NodeMetaData metaData : nodeMetaDatas) {
+                Logging.connectors.info("Indexing metadata: " +
+                    "Type:"+metaData.getType()+
+                    ",ACL ID:"+metaData.getAclId()+
+                    ",Paths:"+metaData.getPaths()+
+                    ",Owner:"+metaData.getOwner()+
+                    ",Tenant:"+metaData.getTenantDomain()+
+                    ",Ancestors (number):"+metaData.getAncestors().size()+
+                    ",Child assocs (number):"+metaData.getChildAssocs().size()+
+                    ",Parent assocs (number):"+metaData.getParentAssocs().size()+
+                    ",Aspects:"+metaData.getAspects()+
+                    ",Properties:"+metaData.getProperties());
+              }
+            } catch (AuthenticationException e) {
+              Logging.connectors.error("Error on getNodesMetaData fromId "+nmdp.getFromNodeId()+" toId "+nmdp.getToNodeId(),e);
+            } catch (IOException e) {
+              Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
+            } catch (JSONException e) {
+              Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
             }
-
+          }
         }
         lastTransactionId += maxResults;
       } while(transactions.getTransactions().size() > 0);
-    } catch (AuthenticationException e) {
-      throw new ManifoldCFException(e);
-    } catch (IOException e) {
-      throw new ManifoldCFException(e);
-    } catch (JSONException e) {
-      throw new ManifoldCFException(e);
-    } catch (Exception e){
-      throw new ManifoldCFException(e);
-    }
+
 //    String luceneQuery = StringUtils.EMPTY;
 //    int i = 0;
 //    while (i < spec.getChildCount()) {
@@ -533,6 +537,10 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 //          activities.addSeedDocument(nodeReference);
 //        }
 //      }
+  }
+
+  private List<NodeMetaData> getNodesMetaData(NodeMetaDataParameters nmdp) throws AuthenticationException, IOException, JSONException {
+    return solrapiClient.getNodesMetaData(nmdp, 1);
   }
 
   /** Get the maximum number of documents to amalgamate together into one batch, for this connector.
