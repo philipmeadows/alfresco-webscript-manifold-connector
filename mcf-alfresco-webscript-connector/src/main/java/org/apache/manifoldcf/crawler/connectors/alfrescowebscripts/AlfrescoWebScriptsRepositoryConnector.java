@@ -24,10 +24,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 import org.alfresco.encryption.KeyStoreParameters;
 import org.alfresco.encryption.ssl.SSLEncryptionParameters;
@@ -41,10 +38,8 @@ import org.alfresco.repo.dictionary.DictionaryDAOImpl;
 import org.alfresco.repo.dictionary.NamespaceDAOImpl;
 import org.alfresco.repo.tenant.SingleTServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
-import org.alfresco.solr.client.SOLRAPIClient;
-import org.alfresco.solr.client.SolrKeyResourceLoader;
-import org.alfresco.solr.client.Transaction;
-import org.alfresco.solr.client.Transactions;
+import org.alfresco.service.cmr.repository.StoreRef;
+import org.alfresco.solr.client.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.core.interfaces.ConfigParams;
@@ -432,6 +427,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       Long maxTxnId = new Long(1000);
       
       int maxResults = 100;
+      long lastTransactionId = 0;
 
       Transactions transactions = null;
       do {
@@ -441,14 +437,29 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
             ",toCommitTime:"+toCommitTime+
             ",maxTxnId:"+maxTxnId+
             ",maxResults:"+maxResults);
-        transactions = this.solrapiClient.getTransactions(fromCommitTime,minTxnId,toCommitTime,maxTxnId,maxResults);
+
+        transactions = this.solrapiClient.getTransactions(null,lastTransactionId,null,lastTransactionId+maxResults,maxResults);
         Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
+        GetNodesParameters getNodeParameters = new GetNodesParameters();
+        ArrayList<Long> txs = new ArrayList<Long>();
+        getNodeParameters.setTransactionIds(txs);
+        getNodeParameters.setStoreProtocol(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getProtocol());
+        getNodeParameters.setStoreIdentifier(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getIdentifier());
+
         for(Transaction transaction : transactions.getTransactions()) {
-          transaction.getId();
-          transaction.getDeletes();
-          transaction.getUpdates();
+          txs.add(transaction.getId());
         }
-      } while((transactions.getTransactions().size() == 0) && (startTime < endTime));
+
+        List<Node> nodes = solrapiClient.getNodes(getNodeParameters, maxResults);
+        for (Node node : nodes) {
+          Logging.connectors.info("Indexing node: " +
+              "nodeRef:"+node.getNodeRef()+
+              ",TXN ID:"+node.getTxnId()+
+              ",ID:"+node.getId()+
+              ",status:"+node.getStatus());
+        }
+        lastTransactionId += maxResults;
+      } while(transactions.getTransactions().size() > 0);
     } catch (AuthenticationException e) {
       throw new ManifoldCFException(e);
     } catch (IOException e) {
