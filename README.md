@@ -30,9 +30,8 @@ mvn clean install
 
 Deploy and configure the repository connector
 ---
-
 ```
-cp target/mcf-alfresco-webscript-connector-1.1.1-jar-with-dependencies.jar $MANIFOLD_HOME/connector-lib
+cp mcf-alfresco-webscript-connector/target/mcf-alfresco-webscript-connector-1.1.1-jar-with-dependencies.jar $MANIFOLD_HOME/connector-lib
 ```
 
 edit <code>$MANIFOLD_HOME/connectors.xml</code> and add this snippet:
