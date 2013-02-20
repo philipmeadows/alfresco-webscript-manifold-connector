@@ -3,6 +3,13 @@ alfresco-webscript-manifold-connector
 
 Alfresco WebScripts Solr API Repository Connector for Apache ManifoldCF
 
+Run Alfresco 4.2.c
+---
+```
+cd alfresco-instance
+mvn install -Pamp-to-war (advised MAVEN_OPTS="-Xms256m -Xmx2G -XX:PermSize=300m")
+(will run on localhost:8080/alfresco-instance)
+```
 
 Install Manifold
 ---
