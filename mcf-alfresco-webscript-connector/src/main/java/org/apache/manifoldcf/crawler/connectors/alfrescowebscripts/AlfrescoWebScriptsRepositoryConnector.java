@@ -24,7 +24,13 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.alfresco.encryption.KeyStoreParameters;
 import org.alfresco.encryption.ssl.SSLEncryptionParameters;
@@ -32,6 +38,7 @@ import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.httpclient.AlfrescoHttpClient;
 import org.alfresco.httpclient.AuthenticationException;
 import org.alfresco.httpclient.HttpClientFactory;
+import org.alfresco.model.ContentModel;
 import org.alfresco.repo.cache.MemoryCache;
 import org.alfresco.repo.dictionary.DictionaryComponent;
 import org.alfresco.repo.dictionary.DictionaryDAOImpl;
@@ -39,8 +46,20 @@ import org.alfresco.repo.dictionary.NamespaceDAOImpl;
 import org.alfresco.repo.tenant.SingleTServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.service.cmr.repository.StoreRef;
-import org.alfresco.solr.client.*;
+import org.alfresco.service.namespace.NamespaceException;
+import org.alfresco.service.namespace.QName;
+import org.alfresco.solr.AlfrescoSolrDataModel;
+import org.alfresco.solr.client.GetNodesParameters;
+import org.alfresco.solr.client.Node;
+import org.alfresco.solr.client.NodeMetaData;
+import org.alfresco.solr.client.NodeMetaDataParameters;
+import org.alfresco.solr.client.PropertyValue;
+import org.alfresco.solr.client.SOLRAPIClient;
+import org.alfresco.solr.client.SolrKeyResourceLoader;
+import org.alfresco.solr.client.Transaction;
+import org.alfresco.solr.client.Transactions;
 import org.apache.commons.lang.StringUtils;
+import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.core.interfaces.ConfigParams;
 import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
@@ -306,6 +325,11 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     repoClient.setBaseUrl(path);
 
       TenantService tenantService = new SingleTServiceImpl();
+      
+      
+      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance("manifold");
+      dataModel.setStoreAll(true);
+      
       NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
       namespaceDAO.setTenantService(tenantService);
       namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
@@ -461,82 +485,14 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
                 ",TXN ID:"+node.getTxnId()+
                 ",ID:"+node.getId()+
                 ",status:"+node.getStatus());
-
-              NodeMetaDataParameters nmdp = new NodeMetaDataParameters();
-              nmdp.setFromNodeId(node.getId());
-              nmdp.setToNodeId(node.getId());
-              nmdp.setIncludeAclId(true);
-              nmdp.setIncludeAspects(true);
-              nmdp.setIncludeChildAssociations(false);
-              nmdp.setIncludeChildIds(true);
-              nmdp.setIncludeNodeRef(true);
-              nmdp.setIncludeOwner(true);
-              nmdp.setIncludeParentAssociations(true);
-              nmdp.setIncludePaths(true);
-              nmdp.setIncludeProperties(false);
-              nmdp.setIncludeType(true);
-              nmdp.setIncludeTxnId(true);
-            List<NodeMetaData> nodeMetaDatas = null;
-            try {
-              nodeMetaDatas = getNodesMetaData(nmdp);
-              for(NodeMetaData metaData : nodeMetaDatas) {
-                Logging.connectors.info("Indexing metadata: " +
-                    "Type:"+metaData.getType()+
-                    ",ACL ID:"+metaData.getAclId()+
-                    ",Paths:"+metaData.getPaths()+
-                    ",Owner:"+metaData.getOwner()+
-                    ",Tenant:"+metaData.getTenantDomain()+
-                    ",Ancestors (number):"+metaData.getAncestors().size()+
-                    ",Child assocs (number):"+metaData.getChildAssocs().size()+
-                    ",Parent assocs (number):"+metaData.getParentAssocs().size()+
-                    ",Aspects:"+metaData.getAspects()+
-                    ",Properties:"+metaData.getProperties());
-              }
-            } catch (AuthenticationException e) {
-              Logging.connectors.error("Error on getNodesMetaData fromId "+nmdp.getFromNodeId()+" toId "+nmdp.getToNodeId(),e);
-            } catch (IOException e) {
-              Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
-            } catch (JSONException e) {
-              Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
-            }
+            
+            activities.addSeedDocument(String.valueOf(node.getId()));
+            
           }
         }
         lastTransactionId += maxResults;
       } while(transactions.getTransactions().size() > 0);
 
-//    String luceneQuery = StringUtils.EMPTY;
-//    int i = 0;
-//    while (i < spec.getChildCount()) {
-//      SpecificationNode sn = spec.getChild(i);
-//      if (sn.getType().equals(JOB_STARTPOINT_NODE_TYPE)) {
-//        luceneQuery = sn.getAttributeValue(AlfrescoConfig.LUCENE_QUERY_PARAM);
-//        break;
-//      }
-//      i++;
-//    }
-
-    /**
-     * TODO - here we have to execute the query and navigating results we can add other seed document to re-crawl
-     * navigating all the repo
-     */
-//    QueryResult queryResult = null;
-//    if (StringUtils.isEmpty(luceneQuery)) {
-//      // get documents from the root of the Alfresco Repository
-//      queryResult = SearchUtils.getChildrenFromCompanyHome(username, password, session);
-//    } else {
-//      // execute a Lucene query against the repository
-//      queryResult = SearchUtils.luceneSearch(username, password, session, luceneQuery);
-//    }
-//
-//    if(queryResult!=null){
-//      ResultSet resultSet = queryResult.getResultSet();
-//      ResultSetRow[] resultSetRows = resultSet.getRows();
-//      for (ResultSetRow resultSetRow : resultSetRows) {
-//          NamedValue[] properties = resultSetRow.getColumns();
-//          String nodeReference = PropertiesUtils.getNodeReference(properties);
-//          activities.addSeedDocument(nodeReference);
-//        }
-//      }
   }
 
   private List<NodeMetaData> getNodesMetaData(NodeMetaDataParameters nmdp) throws AuthenticationException, IOException, JSONException {
@@ -915,7 +871,67 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     while (i < documentIdentifiers.length) {
       long startTime = System.currentTimeMillis();
-      String nodeReference = documentIdentifiers[i];
+      RepositoryDocument rd = new RepositoryDocument();
+      Long nodeId = Long.valueOf(documentIdentifiers[i]);
+      
+      NodeMetaDataParameters nmdp = new NodeMetaDataParameters();
+      nmdp.setFromNodeId(nodeId);
+      nmdp.setToNodeId(nodeId);
+      nmdp.setIncludeAclId(true);
+      nmdp.setIncludeAspects(true);
+      nmdp.setIncludeChildAssociations(false);
+      nmdp.setIncludeChildIds(true);
+      nmdp.setIncludeNodeRef(true);
+      nmdp.setIncludeOwner(true);
+      nmdp.setIncludeParentAssociations(true);
+      nmdp.setIncludePaths(true);
+      nmdp.setIncludeProperties(false);
+      nmdp.setIncludeType(true);
+      nmdp.setIncludeTxnId(true);
+      
+      List<NodeMetaData> nodeMetaDatas = null;
+      String version = StringUtils.EMPTY;
+      try {
+        nodeMetaDatas = getNodesMetaData(nmdp);
+        for(NodeMetaData metaData : nodeMetaDatas) {
+          Logging.connectors.info("Indexing metadata: " +
+              "Type:"+metaData.getType()+
+              ",ACL ID:"+metaData.getAclId()+
+              ",Paths:"+metaData.getPaths()+
+              ",Owner:"+metaData.getOwner()+
+              ",Tenant:"+metaData.getTenantDomain()+
+              ",Ancestors (number):"+metaData.getAncestors().size()+
+              ",Child assocs (number):"+metaData.getChildAssocs().size()+
+              ",Parent assocs (number):"+metaData.getParentAssocs().size()+
+              ",Aspects:"+metaData.getAspects()+
+              ",Properties:"+metaData.getProperties());
+          
+          Map<QName, PropertyValue> properties = metaData.getProperties();
+          version = properties.get(ContentModel.PROP_VERSION_LABEL).toString();
+          Iterator<Entry<QName, PropertyValue>> propsIterator = properties.entrySet().iterator();
+          while(propsIterator.hasNext()){
+            Entry<QName, PropertyValue> entry = propsIterator.next();
+            String prefix = entry.getKey().getPrefixString();
+            String localname = entry.getKey().getLocalName();
+            String fieldName = prefix+":"+localname;
+            String value = entry.getValue().toString();
+            rd.addField(fieldName, value);
+            Logging.connectors.debug("Indexing property: " +fieldName + " , value: " + value);
+          }
+        }
+      } catch (NamespaceException e) {
+        Logging.connectors.error("Error on getNodesMetaData fromId "+nmdp.getFromNodeId()+" toId "+nmdp.getToNodeId(),e);
+      } catch (AuthenticationException e) {
+        Logging.connectors.error("Error on getNodesMetaData fromId "+nmdp.getFromNodeId()+" toId "+nmdp.getToNodeId(),e);
+      } catch (IOException e) {
+        Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
+      } catch (JSONException e) {
+        Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
+      }
+      
+      String documentURI = nodeId + "|" + version;
+      activities.ingestDocument(String.valueOf(nodeId), version, documentURI, rd);
+      
       
       /**
        * TODO - for each seed document we will extract metadata
