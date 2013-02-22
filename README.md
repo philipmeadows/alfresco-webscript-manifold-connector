@@ -11,11 +11,23 @@ mvn install -Pamp-to-war (advised MAVEN_OPTS="-Xms256m -Xmx2G -XX:PermSize=300m"
 (will run on localhost:8080/alfresco-instance)
 ```
 
-Install Manifold
+Install and run Manifold 1.1.1
 ---
 ```
 curl http://www.apache.org/dist/manifoldcf/apache-manifoldcf-1.1.1-bin.zip > manifold-bin-1.1.1.zip
 unzip manifold-bin-1.1.1.zip
+export MANIFOLD_HOME=$PWD/apache-manifoldcf-1.1.1
+java -jar $MANIFOLD_HOME/example/start.jar
+```
+
+
+Install and run Solr 4.1.0
+---
+```
+curl http://apache.rediris.es/lucene/solr/4.1.0/solr-4.1.0.zip > solr-4.1.0.zip
+unzip solr-4.1.0.zip
+export SOLR_HOME=$PWD/solr-4.1.0
+java -jar $SOLR_HOME/example/start.jar
 ```
 
 Install the Alfresco WebScripts Connector
@@ -27,8 +39,7 @@ For building and packaging the connector run the following command from the root
 mvn clean install
 ```
 
-
-Deploy and configure the repository connector
+Deploy and configure the Alfresco Webscript connector
 ---
 ```
 cp mcf-alfresco-webscript-connector/target/mcf-alfresco-webscript-connector-1.1.1-jar-with-dependencies.jar $MANIFOLD_HOME/connector-lib
@@ -54,12 +65,27 @@ copy in the new <code>conf</code> folder all these files related to the keystore
 -ssl.repo.client.truststore
 ```
 
-Finally to start Apache ManifoldCF use the following command:
-```
-java -jar $MANIFOLD_HOME/example/start.jar
-```
+Configure Manifold and start!
+---
+* Add Output Connection (List Output Connections)
+  * Set name (free)
+  * Set type to <code>Solr</code>
+  * Save (all options by default)
 
-Remember to set the valid pointers to the Alfresco instance:
-host: localhost
-port: 8080
-path: alfresco-instance
+* Add Repository Connection (List of Repository Connections)
+  * Set name (free)
+  * Set type to <code>AlfrescoWebscript</code>
+  * Click on <code>Throttling</code> tab
+  * Set <code>Max Connections</code> to <code>1</code>
+  * Click on <code>AlfrescoWebscriptConnector.Server</code> tab
+  * Set <code>Path</code> to <code>/alfresco-instance</code> (other options by default)
+  * Save (all options by default)
+
+* Add Job (List all Jobs)
+  * Set name (free)
+  * Click on <code>Connection</code> tab
+  * Set <code>Output connection</code> to <code>your_output_connection</code>
+  * Set <code>Repository connection</code> to <code>your_repository_connection</code>
+  * Save (all options by default)
+
+* Start the Job (Status and Job Management)
