@@ -42,6 +42,7 @@ mvn clean install
 Copy the conf folder into the manifold classpath
 ```
 cp -Rf alfresco-webscript-manifold-connector/mcf-alfresco-webscript-connector/src/test/resources/conf $MANIFOLD_HOME/example
+cp -Rf alfresco-webscript-manifold-connector/mcf-alfresco-webscript-connector/src/test/resources/alfrescoResources $MANIFOLD_HOME/example
 ```
 
 Deploy and configure the Alfresco Webscript connector
