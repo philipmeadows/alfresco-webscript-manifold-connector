@@ -20,16 +20,12 @@
 package org.apache.manifoldcf.crawler.connectors.alfrescowebscripts;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import org.alfresco.encryption.KeyStoreParameters;
@@ -40,24 +36,15 @@ import org.alfresco.httpclient.AuthenticationException;
 import org.alfresco.httpclient.HttpClientFactory;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.cache.MemoryCache;
-import org.alfresco.repo.dictionary.DictionaryComponent;
-import org.alfresco.repo.dictionary.DictionaryDAOImpl;
-import org.alfresco.repo.dictionary.NamespaceDAOImpl;
+import org.alfresco.repo.dictionary.*;
 import org.alfresco.repo.tenant.SingleTServiceImpl;
 import org.alfresco.repo.tenant.TenantService;
+import org.alfresco.service.cmr.dictionary.ModelDefinition;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.namespace.NamespaceException;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.solr.AlfrescoSolrDataModel;
-import org.alfresco.solr.client.GetNodesParameters;
-import org.alfresco.solr.client.Node;
-import org.alfresco.solr.client.NodeMetaData;
-import org.alfresco.solr.client.NodeMetaDataParameters;
-import org.alfresco.solr.client.PropertyValue;
-import org.alfresco.solr.client.SOLRAPIClient;
-import org.alfresco.solr.client.SolrKeyResourceLoader;
-import org.alfresco.solr.client.Transaction;
-import org.alfresco.solr.client.Transactions;
+import org.alfresco.solr.client.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
@@ -144,6 +131,8 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
   /** Read activity */
   protected final static String ACTIVITY_READ = "read document";
+
+  private final static String id = ".";
 
   /**
    * Constructor
@@ -262,11 +251,17 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       return "Connection temporarily failed: " + e.getMessage();
     } catch (ManifoldCFException e) {
       return "Connection failed: " + e.getMessage();
+    } catch (AuthenticationException e) {
+      return "Connection failed: " + e.getMessage();
+    } catch (JSONException e) {
+      return "Connection failed: " + e.getMessage();
+    } catch (IOException e) {
+      return "Connection failed: " + e.getMessage();
     }
   }
 
   /** Set up a session */
-  protected void getSession() throws ManifoldCFException, ServiceInterruption {
+  protected void getSession() throws ManifoldCFException, ServiceInterruption, JSONException, IOException, AuthenticationException {
     if (this.solrapiClient == null) {
       // Check for parameter validity
 
@@ -299,37 +294,36 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.PATH_PARAM
             + " required but not set");
     
-    int alfrescoPortSSL = 8043;
-    int maxTotalConnections = 40;
-    int maxHostConnections = 40;
-    int socketTimeout = 60000;
+      int alfrescoPortSSL = 8043;
+      int maxTotalConnections = 40;
+      int maxHostConnections = 40;
+      int socketTimeout = 60000;
 
-    String sslKeyStoreType = "JCEKS";
-    String sslKeyStoreProvider = "";
-    String sslKeyStoreLocation = "ssl.repo.client.keystore";
-    String sslKeyStorePasswordFileLocation = "ssl-keystore-passwords.properties";
-    String sslTrustStoreType = "JCEKS";
-    String sslTrustStoreProvider = "";
-    String sslTrustStoreLocation = "ssl.repo.client.truststore";
-    String sslTrustStorePasswordFileLocation = "ssl-truststore-passwords.properties";
+      String sslKeyStoreType = "JCEKS";
+      String sslKeyStoreProvider = "";
+      String sslKeyStoreLocation = "ssl.repo.client.keystore";
+      String sslKeyStorePasswordFileLocation = "ssl-keystore-passwords.properties";
+      String sslTrustStoreType = "JCEKS";
+      String sslTrustStoreProvider = "";
+      String sslTrustStoreLocation = "ssl.repo.client.truststore";
+      String sslTrustStorePasswordFileLocation = "ssl-truststore-passwords.properties";
 
-    KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", sslKeyStoreType, sslKeyStoreProvider, sslKeyStorePasswordFileLocation, sslKeyStoreLocation);
-    KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", sslTrustStoreType, sslTrustStoreProvider, sslTrustStorePasswordFileLocation, sslTrustStoreLocation);
-    SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
-    SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader("."));
+      KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", sslKeyStoreType, sslKeyStoreProvider, sslKeyStorePasswordFileLocation, sslKeyStoreLocation);
+      KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", sslTrustStoreType, sslTrustStoreProvider, sslTrustStorePasswordFileLocation, sslTrustStoreLocation);
+      SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
+      SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader(id));
 
-    HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
-    sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
+      HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
+      sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
 
-    AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, alfrescoPortSSL);
-    repoClient.setBaseUrl(path);
+      AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, alfrescoPortSSL);
+      repoClient.setBaseUrl(path);
 
       TenantService tenantService = new SingleTServiceImpl();
-      
-      
-      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance("manifold");
+
+      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance(id);
       dataModel.setStoreAll(true);
-      
+
       NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
       namespaceDAO.setTenantService(tenantService);
       namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
@@ -349,6 +343,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
 
       this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
+      trackModels(dataModel);
 
       lastSessionFetch = System.currentTimeMillis();
     }
@@ -363,14 +358,13 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     long currentTime = System.currentTimeMillis();
     if (currentTime >= lastSessionFetch + timeToRelease) {
-        this.solrapiClient=null;
         lastSessionFetch = -1L;
     }
   }
 
   protected void checkConnection() throws ManifoldCFException,
-      ServiceInterruption {
-    while (true) {
+      ServiceInterruption, IOException, JSONException, AuthenticationException {
+//    while (true) {
       getSession();
 
       if(this.solrapiClient == null){
@@ -378,10 +372,8 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
             "Alfresco: Error during checking the connection.");
         throw new ManifoldCFException( "Alfresco: Error during checking the connection.");
       }
-      
-      this.solrapiClient=null;
       return;
-    }
+//    }
   }
 
   /** This method is periodically called for all connectors that are connected but not
@@ -395,7 +387,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     long currentTime = System.currentTimeMillis();
     if (currentTime >= lastSessionFetch + timeToRelease) {
         try {
-          this.solrapiClient=null;
           lastSessionFetch = -1L;
         } catch (Exception e) {
           Logging.connectors.error(
@@ -437,8 +428,16 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       DocumentSpecification spec, long startTime, long endTime)
       throws ManifoldCFException, ServiceInterruption {
 
-    getSession();
-    
+    try {
+      getSession();
+    } catch (JSONException e) {
+      Logging.connectors.error("Connection failed: " + e.getMessage());
+    } catch (IOException e) {
+      Logging.connectors.error("Connection failed: " + e.getMessage());
+    } catch (AuthenticationException e) {
+      Logging.connectors.error("Connection failed: " + e.getMessage());
+    }
+
 //    try {
       
       //Mon Jun 18 2007 00:00:00 GMT-0400 (Eastern Daylight Time)
@@ -1096,6 +1095,85 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       i++;
     }
     return rval;
+  }
+
+  private void trackModels(AlfrescoSolrDataModel dataModel) throws AuthenticationException, IOException, JSONException
+  {
+    // track models
+    // reflect changes changes and update on disk copy
+
+    long start = System.nanoTime();
+
+    List<AlfrescoModelDiff> modelDiffs = this.solrapiClient.getModelsDiff(dataModel.getAlfrescoModels());
+    HashMap<String, M2Model> modelMap = new HashMap<String, M2Model>();
+
+    for (AlfrescoModelDiff modelDiff : modelDiffs)
+    {
+      switch (modelDiff.getType())
+      {
+        case NEW:
+          AlfrescoModel newModel = this.solrapiClient.getModel(modelDiff.getModelName());
+          for (M2Namespace namespace : newModel.getModel().getNamespaces())
+          {
+            modelMap.put(namespace.getUri(), newModel.getModel());
+          }
+          break;
+      }
+    }
+
+    HashSet<String> loadedModels = new HashSet<String>();
+    for (M2Model model : modelMap.values())
+    {
+      loadModel(modelMap, loadedModels, model, dataModel);
+    }
+    if(modelDiffs.size() > 0)
+    {
+      dataModel.afterInitModels();
+    }
+
+    File alfrescoModelDir = new File(id, "alfrescoModels");
+    if (!alfrescoModelDir.exists())
+    {
+      alfrescoModelDir.mkdir();
+    }
+    for (AlfrescoModelDiff modelDiff : modelDiffs)
+    {
+      switch (modelDiff.getType())
+      {
+        case NEW:
+          M2Model newModel = dataModel.getM2Model(modelDiff.getModelName());
+          // add on file
+          File newFile = new File(alfrescoModelDir, getModelFileName(newModel));
+          FileOutputStream nos = new FileOutputStream(newFile);
+          newModel.toXML(nos);
+          nos.flush();
+          nos.close();
+          break;
+      }
+    }
+  }
+
+  private String getModelFileName(M2Model model) {
+    return model.getName().replace(":", ".") + "." + model.getChecksum(ModelDefinition.XMLBindingType.DEFAULT) + ".xml";
+  }
+
+  private void loadModel(Map<String, M2Model> modelMap, HashSet<String> loadedModels, M2Model model, AlfrescoSolrDataModel dataModel) {
+    String modelName = model.getName();
+    if (loadedModels.contains(modelName) == false)
+    {
+      for (M2Namespace importNamespace : model.getImports())
+      {
+        M2Model importedModel = modelMap.get(importNamespace.getUri());
+        if (importedModel != null) {
+          // Ensure that the imported model is loaded first
+          loadModel(modelMap, loadedModels, importedModel, dataModel);
+        }
+      }
+
+      dataModel.putModel(model);
+      loadedModels.add(modelName);
+      Logging.connectors.info("Loading model " + model.getName());
+    }
   }
 
 }
