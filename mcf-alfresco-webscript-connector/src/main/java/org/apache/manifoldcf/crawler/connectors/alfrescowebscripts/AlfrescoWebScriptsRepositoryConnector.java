@@ -92,7 +92,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   protected SOLRAPIClient solrapiClient = null;
   
   protected static final long timeToRelease = 300000L;
-  protected long lastSessionFetch = -1L;
 
   protected static final String RELATIONSHIP_CHILD = "child";
 
@@ -124,15 +123,15 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   /** Forward to the template to view the specification parameters for the job */
   private static final String VIEW_SPEC_FORWARD = "viewSpecification.html";
 
-  // Other miscellaneous constants
-  
   /** The root node for the Alfresco connector configuration in ManifoldCF */
   private static final String JOB_STARTPOINT_NODE_TYPE = "startpoint";
 
-  /** Read activity */
-  protected final static String ACTIVITY_READ = "read document";
+  private final static String configPath = ".";
 
-  private final static String id = ".";
+  /** contains the Snapshot of indexing from the last thread being allocated **/
+  private volatile static IndexingSnapshot lastStatus = new IndexingSnapshot(0,0);
+
+  private static int maxResults = 100;
 
   /**
    * Constructor
@@ -200,13 +199,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    */
   @Override
   public void disconnect() throws ManifoldCFException {
-//    if (session != null) {
-//
-//      //AuthenticationUtils.endSession();
-//      session = null;
-      lastSessionFetch = -1L;
-//    }
-
     username = null;
     password = null;
     protocol = null;
@@ -311,7 +303,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", sslKeyStoreType, sslKeyStoreProvider, sslKeyStorePasswordFileLocation, sslKeyStoreLocation);
       KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", sslTrustStoreType, sslTrustStoreProvider, sslTrustStorePasswordFileLocation, sslTrustStoreLocation);
       SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
-      SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader(id));
+      SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader(configPath));
 
       HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
       sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
@@ -321,7 +313,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
       TenantService tenantService = new SingleTServiceImpl();
 
-      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance(id);
+      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance(configPath);
       dataModel.setStoreAll(true);
 
       NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
@@ -344,8 +336,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
       this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
       trackModels(dataModel);
-
-      lastSessionFetch = System.currentTimeMillis();
     }
   }
 
@@ -353,27 +343,22 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * Release the session, if it's time.
    */
   protected void releaseCheck() throws ManifoldCFException {
-    if (lastSessionFetch == -1L)
-      return;
-
-    long currentTime = System.currentTimeMillis();
-    if (currentTime >= lastSessionFetch + timeToRelease) {
-        lastSessionFetch = -1L;
-    }
+//    if (lastSessionFetch == -1L)
+//      return;
+//
+//    long currentTime = System.currentTimeMillis();
+//    if (currentTime >= lastSessionFetch + timeToRelease) {
+//        lastSessionFetch = -1L;
+//    }
   }
 
   protected void checkConnection() throws ManifoldCFException,
       ServiceInterruption, IOException, JSONException, AuthenticationException {
-//    while (true) {
-      getSession();
-
-      if(this.solrapiClient == null){
-        Logging.connectors.error(
-            "Alfresco: Error during checking the connection.");
-        throw new ManifoldCFException( "Alfresco: Error during checking the connection.");
-      }
-      return;
-//    }
+    if(this.solrapiClient == null){
+      Logging.connectors.error(
+          "Alfresco: Error during checking the connection.");
+      throw new ManifoldCFException( "Alfresco: Error during checking the connection.");
+    }
   }
 
   /** This method is periodically called for all connectors that are connected but not
@@ -381,21 +366,6 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    */
   @Override
   public void poll() throws ManifoldCFException {
-    if (lastSessionFetch == -1L)
-      return;
-
-    long currentTime = System.currentTimeMillis();
-    if (currentTime >= lastSessionFetch + timeToRelease) {
-        try {
-          lastSessionFetch = -1L;
-        } catch (Exception e) {
-          Logging.connectors.error(
-              "Alfresco: Error during polling: "
-                  + e.getMessage(), e);
-          throw new ManifoldCFException("Alfresco: Error during polling: "
-              + e.getMessage(),e);
-        }
-    }
   }
 
   /** Queue "seed" documents.  Seed documents are the starting places for crawling activity.  Documents
@@ -428,70 +398,61 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       DocumentSpecification spec, long startTime, long endTime)
       throws ManifoldCFException, ServiceInterruption {
 
-    try {
-      getSession();
-    } catch (JSONException e) {
-      Logging.connectors.error("Connection failed: " + e.getMessage());
-    } catch (IOException e) {
-      Logging.connectors.error("Connection failed: " + e.getMessage());
-    } catch (AuthenticationException e) {
-      Logging.connectors.error("Connection failed: " + e.getMessage());
-    }
+      try {
+        getSession();
+      } catch (JSONException e) {
+        Logging.connectors.error("Connection failed: " + e.getMessage());
+      } catch (IOException e) {
+        Logging.connectors.error("Connection failed: " + e.getMessage());
+      } catch (AuthenticationException e) {
+        Logging.connectors.error("Connection failed: " + e.getMessage());
+      }
 
-//    try {
-      
-      //Mon Jun 18 2007 00:00:00 GMT-0400 (Eastern Daylight Time)
-      //Long fromCommitTime = new Long("1182139200000");
-      //Wed Feb 06 2013 12:53:11 GMT+0100 (CET)
-      //Long toCommitTime = new Long("1360151591863");
+      Logging.connectors.info("Fetching transactions: " + lastStatus);
 
-      //Long minTxnId = new Long(1);
-      //Long maxTxnId = new Long(1000);
+      List<Node> nodes = null;
+      ArrayList<Long> txs = new ArrayList<Long>();
+      try {
 
-      int maxResults = 100;
-      long lastTransactionId = 0;
-
-      Transactions transactions = null;
-      do {
-        Logging.connectors.info("Fetching transactions: " +
-            ",lastTransactionId:"+lastTransactionId+
-            ",maxResults:"+maxResults);
-
-        List<Node> nodes = null;
-        ArrayList<Long> txs = new ArrayList<Long>();
-        try {
-          transactions = this.solrapiClient.getTransactions(null,lastTransactionId,null,lastTransactionId+maxResults,maxResults);
-          Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
-          GetNodesParameters getNodeParameters = new GetNodesParameters();
-          getNodeParameters.setTransactionIds(txs);
-          getNodeParameters.setStoreProtocol(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getProtocol());
-          getNodeParameters.setStoreIdentifier(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getIdentifier());
-          for(Transaction transaction : transactions.getTransactions()) {
-            txs.add(transaction.getId());
-          }
-          nodes = solrapiClient.getNodes(getNodeParameters, maxResults);
-        } catch (AuthenticationException e) {
-          Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
-        } catch (IOException e) {
-          Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
-        } catch (JSONException e) {
-          Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
+        Transactions transactions = null;
+        synchronized (this) {
+          transactions = this.solrapiClient.getTransactions(
+              lastStatus.getCommitTime(), //fromCommitTime
+              lastStatus.getTxnId(), //minTxnId
+              null, //toCommitTime
+              null, //maxTxnId
+              maxResults); //maxResults
+          lastStatus = new IndexingSnapshot(new Date().getTime(),lastStatus.getTxnId()+maxResults);
         }
-        if (nodes != null) {
-          for (Node node : nodes) {
-            Logging.connectors.info("Indexing node: " +
-                "nodeRef:"+node.getNodeRef()+
-                ",TXN ID:"+node.getTxnId()+
-                ",ID:"+node.getId()+
-                ",status:"+node.getStatus());
-            
-            activities.addSeedDocument(String.valueOf(node.getId()));
-            
-          }
-        }
-        lastTransactionId += maxResults;
-      } while(transactions.getTransactions().size() > 0);
 
+        Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
+        GetNodesParameters getNodeParameters = new GetNodesParameters();
+        getNodeParameters.setTransactionIds(txs);
+        getNodeParameters.setStoreProtocol(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getProtocol());
+        getNodeParameters.setStoreIdentifier(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getIdentifier());
+        for(Transaction transaction : transactions.getTransactions()) {
+          txs.add(transaction.getId());
+        }
+        nodes = solrapiClient.getNodes(getNodeParameters, maxResults);
+      } catch (AuthenticationException e) {
+        Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
+      } catch (IOException e) {
+        Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
+      } catch (JSONException e) {
+        Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
+      }
+      if (nodes != null) {
+        for (Node node : nodes) {
+          Logging.connectors.info("Indexing node: " +
+              "nodeRef:"+node.getNodeRef()+
+              ",TXN ID:"+node.getTxnId()+
+              ",ID:"+node.getId()+
+              ",status:"+node.getStatus());
+
+          activities.addSeedDocument(String.valueOf(node.getId()));
+
+        }
+      }
   }
 
   private List<NodeMetaData> getNodesMetaData(NodeMetaDataParameters nmdp) throws AuthenticationException, IOException, JSONException {
@@ -503,7 +464,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    */
   @Override
   public int getMaxDocumentRequest() {
-    return 1;
+    return maxResults;
   }
 
   /**
@@ -996,14 +957,14 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 //            is = ContentReader.getBinary(binary, username, password, session);
 //            rd.setBinary(is, fileLength);
 //            
-//            //id is the node reference only if the node has an unique content stream
-//            //For a node with a single d:content property: id = node reference
-//            String id = PropertiesUtils.getNodeReference(properties);
+//            //configPath is the node reference only if the node has an unique content stream
+//            //For a node with a single d:content property: configPath = node reference
+//            String configPath = PropertiesUtils.getNodeReference(properties);
 //            
-//            //For a node with multiple d:content properties: id = node reference;QName
+//            //For a node with multiple d:content properties: configPath = node reference;QName
 //            //The QName of a property of type d:content will be appended to the node reference
 //            if(contentProperties.size()>1){
-//              id = id + INGESTION_SEPARATOR_FOR_MULTI_BINARY + contentProperty.getName();
+//              configPath = configPath + INGESTION_SEPARATOR_FOR_MULTI_BINARY + contentProperty.getName();
 //            }
 //            
 //            //version label
@@ -1012,7 +973,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 //            //the document uri is related to the specific d:content property available in the node
 //            //we want to ingest each content stream that are nested in a single node
 //            String documentURI = binary.getUrl();
-//            activities.ingestDocument(id, version, documentURI, rd);
+//            activities.ingestDocument(configPath, version, documentURI, rd);
 //          }
 //          
 //        } finally {
@@ -1131,7 +1092,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       dataModel.afterInitModels();
     }
 
-    File alfrescoModelDir = new File(id, "alfrescoModels");
+    File alfrescoModelDir = new File(configPath, "alfrescoModels");
     if (!alfrescoModelDir.exists())
     {
       alfrescoModelDir.mkdir();
