@@ -5,7 +5,7 @@ public final class IndexingSnapshot {
   private final long txnId;
   private final long commitTime;
 
-  IndexingSnapshot(final long txnId,final long commitTime) {
+  IndexingSnapshot(final long txnId, final long commitTime) {
     this.txnId = txnId;
     this.commitTime = commitTime;
   }
@@ -19,6 +19,6 @@ public final class IndexingSnapshot {
   }
 
   public String toString() {
-    return "IndexingSnapshot("+this.getTxnId()+","+this.getCommitTime()+")";
+    return "IndexingSnapshot(" + this.getTxnId() + "," + this.getCommitTime() + ")";
   }
 }

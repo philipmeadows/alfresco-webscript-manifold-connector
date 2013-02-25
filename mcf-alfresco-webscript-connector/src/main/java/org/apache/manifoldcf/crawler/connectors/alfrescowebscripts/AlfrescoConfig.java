@@ -19,44 +19,62 @@
  */
 package org.apache.manifoldcf.crawler.connectors.alfrescowebscripts;
 
-/** 
+/**
  * Parameters data for the Alfresco WebScripts repository connector.
-*/
+ */
 public class AlfrescoConfig {
 
-  /** Username parameter */
+  /**
+   * Username parameter
+   */
   public static final String USERNAME_PARAM = "username";
- 
-  /** Password parameter */
+
+  /**
+   * Password parameter
+   */
   public static final String PASSWORD_PARAM = "password";
-  
-  /** Protocol parameter */
+
+  /**
+   * Protocol parameter
+   */
   public static final String PROTOCOL_PARAM = "protocol";
-  
-  /** Server name parameter */
+
+  /**
+   * Server name parameter
+   */
   public static final String SERVER_PARAM = "server";
-  
-  /** Port parameter */
+
+  /**
+   * Port parameter
+   */
   public static final String PORT_PARAM = "port";
-  
-  /** Parameter for the path of the context of the Alfresco WebScripts API */
+
+  /**
+   * Parameter for the path of the context of the Alfresco WebScripts API
+   */
   public static final String PATH_PARAM = "path";
-  
-  /** The Lucene Query parameter */
+
+  /**
+   * The Lucene Query parameter
+   */
   public static final String LUCENE_QUERY_PARAM = "luceneQuery";
-  
-  /** Tenant domain parameter (optional) */
+
+  /**
+   * Tenant domain parameter (optional)
+   */
   public static final String TENANT_DOMAIN_PARAM = "tenantDomain";
-  
-  /** Separator for the username field dedicated to the tenant domain */
+
+  /**
+   * Separator for the username field dedicated to the tenant domain
+   */
   public static final String TENANT_DOMAIN_SEP = "@";
-  
+
   //default values
   public static final String USERNAME_DEFAULT_VALUE = "admin";
   public static final String PASSWORD_DEFAULT_VALUE = "admin";
   public static final String PROTOCOL_DEFAULT_VALUE = "http";
   public static final String SERVER_DEFAULT_VALUE = "localhost";
   public static final String PORT_DEFAULT_VALUE = "8080";
-  public static final String PATH_DEFAULT_VALUE = "/alfresco/api";
-  
+  public static final String PATH_DEFAULT_VALUE = "/alfresco-instance";
+
 }

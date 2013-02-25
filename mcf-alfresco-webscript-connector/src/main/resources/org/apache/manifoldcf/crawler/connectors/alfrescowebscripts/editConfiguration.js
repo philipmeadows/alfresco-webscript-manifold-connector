@@ -24,13 +24,6 @@ function checkConfig()
 
 function checkConfigForSave()
 {
-  if (editconnection.username.value == "")
-  {
-    alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.TheUsernameMustNotBeNull'))");
-    SelectTab("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.Server'))");
-    editconnection.username.focus();
-    return false;
-  }
   if (editconnection.password.value == "")
   {
     alert("$Encoder.bodyJavascriptEscape($ResourceBundle.getString('AlfrescoWebscriptConnector.ThePasswordMustNotBeNull'))");

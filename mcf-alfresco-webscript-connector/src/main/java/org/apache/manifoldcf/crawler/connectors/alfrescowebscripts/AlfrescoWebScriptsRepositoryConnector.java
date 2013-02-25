@@ -19,200 +19,200 @@
  */
 package org.apache.manifoldcf.crawler.connectors.alfrescowebscripts;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
-import java.util.Map.Entry;
-
-import org.alfresco.encryption.KeyStoreParameters;
-import org.alfresco.encryption.ssl.SSLEncryptionParameters;
-import org.alfresco.error.AlfrescoRuntimeException;
-import org.alfresco.httpclient.AlfrescoHttpClient;
-import org.alfresco.httpclient.AuthenticationException;
-import org.alfresco.httpclient.HttpClientFactory;
-import org.alfresco.model.ContentModel;
-import org.alfresco.repo.cache.MemoryCache;
-import org.alfresco.repo.dictionary.*;
-import org.alfresco.repo.tenant.SingleTServiceImpl;
-import org.alfresco.repo.tenant.TenantService;
-import org.alfresco.service.cmr.dictionary.ModelDefinition;
-import org.alfresco.service.cmr.repository.StoreRef;
-import org.alfresco.service.namespace.NamespaceException;
-import org.alfresco.service.namespace.QName;
-import org.alfresco.solr.AlfrescoSolrDataModel;
-import org.alfresco.solr.client.*;
+import org.alfresco.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
-import org.apache.manifoldcf.core.interfaces.ConfigParams;
-import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
-import org.apache.manifoldcf.core.interfaces.IPostParameters;
-import org.apache.manifoldcf.core.interfaces.IThreadContext;
-import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
-import org.apache.manifoldcf.core.interfaces.SpecificationNode;
+import org.apache.manifoldcf.core.interfaces.*;
 import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
 import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
 import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.apache.manifoldcf.crawler.system.Logging;
-import org.apache.solr.core.SolrResourceLoader;
-import org.json.JSONException;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnector {
 
-  /** Fetch activity */
+  /**
+   * Fetch activity
+   */
   public final static String ACTIVITY_FETCH = "fetch";
 
-  /** Username value for the Alfresco session */
+  /**
+   * Username value for the Alfresco session
+   */
   protected String username = null;
-  
-  /** Password value for the Alfresco session */
-  protected String password = null;
-  
-  /** Endpoint protocol */
-  protected String protocol = null;
-  
-  /** Endpoint server name */
-  protected String server = null;
-  
-  /** Endpoint port */
-  protected String port = null;
-  
-  /** Endpoint context path of the Alfresco webapp */
-  protected String path = null;
-  
-  /** Alfresco Tenant domain */
-  protected String tenantDomain = null;
 
-  /** Alfresco Solr API Client */
-  protected SOLRAPIClient solrapiClient = null;
-  
-  protected static final long timeToRelease = 300000L;
+  /**
+   * Password value for the Alfresco session
+   */
+  protected String password = null;
+
+  /**
+   * Endpoint protocol
+   */
+  protected String protocol = null;
+
+  /**
+   * Endpoint server name
+   */
+  protected String server = null;
+
+  /**
+   * Endpoint port
+   */
+  protected String port = null;
+
+  /**
+   * Endpoint context path of the Alfresco webapp
+   */
+  protected String path = null;
 
   protected static final String RELATIONSHIP_CHILD = "child";
 
-  // Tabs
-  
-  /** The Lucene Query label for the configuration tab of the job settings */
-  private static final String TAB_LABEL_LUCENE_QUERY_RESOURCE = "AlfrescoWebscriptConnector.LuceneQuery";
-  
-  /** Alfresco Server configuration tab name */
+  /**
+   * Alfresco Server configuration tab name
+   */
   private static final String ALFRESCO_SERVER_TAB_RESOURCE = "AlfrescoWebscriptConnector.Server";
 
-  // Velocity template names
-
-  /** Forward to the javascript to check the configuration parameters */
+  /**
+   * Forward to the javascript to check the configuration parameters
+   */
   private static final String EDIT_CONFIG_HEADER_FORWARD = "editConfiguration.js";
 
-  /** Forward to the HTML template to edit the configuration parameters */
+  /**
+   * Forward to the HTML template to edit the configuration parameters
+   */
   private static final String EDIT_CONFIG_FORWARD_SERVER = "editConfiguration_Server.html";
-  
-  /** Forward to the javascript to check the specification parameters for the job */
-  private static final String EDIT_SPEC_HEADER_FORWARD = "editSpecification.js";
-
-  /** Forward to the template to edit the configuration parameters for the job */
-  private static final String EDIT_SPEC_FORWARD_LUCENEQUERY = "editSpecification_LuceneQuery.html";
-  
-  /** Forward to the HTML template to view the configuration parameters */
-  private static final String VIEW_CONFIG_FORWARD = "viewConfiguration.html";
-  
-  /** Forward to the template to view the specification parameters for the job */
-  private static final String VIEW_SPEC_FORWARD = "viewSpecification.html";
-
-  /** The root node for the Alfresco connector configuration in ManifoldCF */
-  private static final String JOB_STARTPOINT_NODE_TYPE = "startpoint";
-
-  private final static String configPath = ".";
-
-  /** contains the Snapshot of indexing from the last thread being allocated **/
-  private volatile static IndexingSnapshot lastStatus = new IndexingSnapshot(0,0);
-
-  private static int maxResults = 100;
 
   /**
-   * Constructor
+   * Forward to the javascript to check the specification parameters for the job
    */
+  private static final String EDIT_SPEC_HEADER_FORWARD = "editSpecification.js";
+
+  /**
+   * Forward to the HTML template to view the configuration parameters
+   */
+  private static final String VIEW_CONFIG_FORWARD = "viewConfiguration.html";
+
+  /**
+   * The root node for the Alfresco connector configuration in ManifoldCF
+   */
+  private static final String JOB_STARTPOINT_NODE_TYPE = "startpoint";
+
+  private static AlfrescoIndexTracker alfrescoTracker;
+
   public AlfrescoWebScriptsRepositoryConnector() {
     super();
   }
 
   /**
-   * @return
+   * Queue "seed" documents.  Seed documents are the starting places for crawling activity.  Documents
+   * are seeded when this method calls appropriate methods in the passed in ISeedingActivity object.
+   * <p/>
+   * This method can choose to find repository changes that happen only during the specified time interval.
+   * The seeds recorded by this method will be viewed by the framework based on what the
+   * getConnectorModel() method returns.
+   * <p/>
+   * It is not a big problem if the connector chooses to create more seeds than are
+   * strictly necessary; it is merely a question of overall work required.
+   * <p/>
+   * The times passed to this method may be interpreted for greatest efficiency.  The time ranges
+   * any given job uses with this connector will not overlap, but will proceed starting at 0 and going
+   * to the "current time", each time the job is run.  For continuous crawling jobs, this method will
+   * be called once, when the job starts, and at various periodic intervals as the job executes.
+   * <p/>
+   * When a job's specification is changed, the framework automatically resets the seeding start time to 0.  The
+   * seeding start time may also be set to 0 on each job run, depending on the connector model returned by
+   * getConnectorModel().
+   * <p/>
+   * Note that it is always ok to send MORE documents rather than less to this method.
+   *
+   * @param activities is the interface this method should use to perform whatever framework actions are desired.
+   * @param spec       is a document specification (that comes from the job).
+   * @param startTime  is the beginning of the time range to consider, inclusive.
+   * @param endTime    is the end of the time range to consider, exclusive.
    */
-  public ClassLoader getResourceClassLoader()
-  {
-    //@TODO - tweak here location, if necessary at all
-    File f = new File("alfrescoResources");
-    if (f.canRead() && f.isDirectory())
-    {
+  @Override
+  public void addSeedDocuments(ISeedingActivity activities,
+                               DocumentSpecification spec, long startTime, long endTime)
+      throws ManifoldCFException, ServiceInterruption {
 
-      URL[] urls = new URL[1];
+    getSession();
 
-      try
-      {
-        URL url = f.toURI().normalize().toURL();
-        urls[0] = url;
+    List<String> nodeIds = alfrescoTracker.getNodeIds();
+    if (nodeIds != null) {
+      for (String nodeId : nodeIds) {
+        Logging.connectors.info("Indexing node: " + nodeId);
+        activities.addSeedDocument(nodeId);
       }
-      catch (MalformedURLException e)
-      {
-        throw new AlfrescoRuntimeException("Failed to add resources to classpath ", e);
-      }
-
-      return URLClassLoader.newInstance(urls, this.getClass().getClassLoader());
-    }
-    else
-    {
-      return this.getClass().getClassLoader();
     }
   }
 
-  /** 
-   * Return the list of activities that this connector supports (i.e. writes into the log).
-   * @return the list.
+  /**
+   * Process a set of documents.
+   * This is the method that should cause each document to be fetched, processed, and the results either added
+   * to the queue of documents for the current job, and/or entered into the incremental ingestion manager.
+   * The document specification allows this class to filter what is done based on the job.
+   *
+   * @param documentIdentifiers is the set of document identifiers to process.
+   * @param versions            is the corresponding document versions to process, as returned by getDocumentVersions() above.
+   *                            The implementation may choose to ignore this parameter and always process the current version.
+   * @param activities          is the interface this method should use to queue up new document references
+   *                            and ingest documents.
+   * @param spec                is the document specification.
+   * @param scanOnly            is an array corresponding to the document identifiers.  It is set to true to indicate when the processing
+   *                            should only find other references, and should not actually call the ingestion methods.
    */
   @Override
-  public String[] getActivitiesList() {
-    return new String[] { ACTIVITY_FETCH };
+  public void processDocuments(String[] documentIdentifiers, String[] versions,
+                               IProcessActivity activities, DocumentSpecification spec,
+                               boolean[] scanOnly) throws ManifoldCFException, ServiceInterruption {
+
+    Logging.connectors.debug("Alfresco: Inside processDocuments");
+    int i = 0;
+
+    while (i < documentIdentifiers.length) {
+      Long nodeId = Long.valueOf(documentIdentifiers[i]);
+      Pair<RepositoryDocument, String> rd = alfrescoTracker.processMetaData(nodeId);
+      String documentURI = nodeId + "|" + rd.getSecond();
+      activities.ingestDocument(String.valueOf(nodeId), rd.getSecond(), documentURI, rd.getFirst());
+      i++;
+    }
   }
 
-  /** Get the bin name strings for a document identifier.  The bin name describes the queue to which the
-   * document will be assigned for throttling purposes.  Throttling controls the rate at which items in a
-   * given queue are fetched; it does not say anything about the overall fetch rate, which may operate on
-   * multiple queues or bins.
-   * For example, if you implement a web crawler, a good choice of bin name would be the server name, since
-   * that is likely to correspond to a real resource that will need real throttle protection.
-   *@param documentIdentifier is the document identifier.
-   *@return the set of bin names.  If an empty array is returned, it is equivalent to there being no request
-   * rate throttling available for this identifier.
+  /**
+   * The short version of getDocumentVersions.
+   * Get document versions given an array of document identifiers.
+   * This method is called for EVERY document that is considered. It is
+   * therefore important to perform as little work as possible here.
+   *
+   * @param documentIdentifiers is the array of local document identifiers, as understood by this connector.
+   * @param spec                is the current document specification for the current job.  If there is a dependency on this
+   *                            specification, then the version string should include the pertinent data, so that reingestion will occur
+   *                            when the specification changes.  This is primarily useful for metadata.
+   * @return the corresponding version strings, with null in the places where the document no longer exists.
+   *         Empty version strings indicate that there is no versioning ability for the corresponding document, and the document
+   *         will always be processed.
    */
   @Override
-  public String[] getBinNames(String documentIdentifier) {
-    return new String[] { server };
+  public String[] getDocumentVersions(String[] documentIdentifiers,
+                                      DocumentSpecification spec) throws ManifoldCFException,
+      ServiceInterruption {
+    return alfrescoTracker.getDocumentVersions(documentIdentifiers, spec);
   }
 
-  /** 
-   * Close the connection.  Call this before discarding the connection.
-   */
-  @Override
-  public void disconnect() throws ManifoldCFException {
-    username = null;
-    password = null;
-    protocol = null;
-    server = null;
-    port = null;
-    path = null;
-    tenantDomain = null;
-
-  }
-
-  /** Connect.
+  /**
+   * Connect.
+   *
    * @param configParams is the set of configuration parameters, which
-   * in this case describe the target appliance, basic auth configuration, etc.  (This formerly came
-   * out of the ini file.)
+   *                     in this case describe the target appliance, basic auth configuration, etc.  (This formerly came
+   *                     out of the ini file.)
    */
   @Override
   public void connect(ConfigParams configParams) {
@@ -223,38 +223,65 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     server = params.getParameter(AlfrescoConfig.SERVER_PARAM);
     port = params.getParameter(AlfrescoConfig.PORT_PARAM);
     path = params.getParameter(AlfrescoConfig.PATH_PARAM);
-    tenantDomain = params.getParameter(AlfrescoConfig.TENANT_DOMAIN_PARAM);
-    
-    //tenant domain (optional parameter). Pattern: username@tenantDomain
-    if(StringUtils.isNotEmpty(tenantDomain)){
-      username += AlfrescoConfig.TENANT_DOMAIN_SEP + tenantDomain;
-    }
+    alfrescoTracker = new AlfrescoIndexTracker(".", username, password, protocol, server, port, path);
+    alfrescoTracker.init();
   }
 
-  /** Test the connection.  Returns a string describing the connection integrity.
-   *@return the connection's status as a displayable string.
+  /**
+   * Close the connection.  Call this before discarding the connection.
+   */
+  @Override
+  public void disconnect() throws ManifoldCFException {
+    username = null;
+    password = null;
+    protocol = null;
+    server = null;
+    port = null;
+    path = null;
+  }
+
+  /**
+   * Test the connection.  Returns a string describing the connection integrity.
+   *
+   * @return the connection's status as a displayable string.
    */
   @Override
   public String check() throws ManifoldCFException {
-    try {
-      checkConnection();
-      return super.check();
-    } catch (ServiceInterruption e) {
-      return "Connection temporarily failed: " + e.getMessage();
-    } catch (ManifoldCFException e) {
-      return "Connection failed: " + e.getMessage();
-    } catch (AuthenticationException e) {
-      return "Connection failed: " + e.getMessage();
-    } catch (JSONException e) {
-      return "Connection failed: " + e.getMessage();
-    } catch (IOException e) {
-      return "Connection failed: " + e.getMessage();
-    }
+    return super.check();
   }
 
-  /** Set up a session */
-  protected void getSession() throws ManifoldCFException, ServiceInterruption, JSONException, IOException, AuthenticationException {
-    if (this.solrapiClient == null) {
+  /**
+   * Return the list of activities that this connector supports (i.e. writes into the log).
+   *
+   * @return the list.
+   */
+  @Override
+  public String[] getActivitiesList() {
+    return new String[]{ACTIVITY_FETCH};
+  }
+
+  /**
+   * Get the bin name strings for a document identifier.  The bin name describes the queue to which the
+   * document will be assigned for throttling purposes.  Throttling controls the rate at which items in a
+   * given queue are fetched; it does not say anything about the overall fetch rate, which may operate on
+   * multiple queues or bins.
+   * For example, if you implement a web crawler, a good choice of bin name would be the server name, since
+   * that is likely to correspond to a real resource that will need real throttle protection.
+   *
+   * @param documentIdentifier is the document identifier.
+   * @return the set of bin names.  If an empty array is returned, it is equivalent to there being no request
+   *         rate throttling available for this identifier.
+   */
+  @Override
+  public String[] getBinNames(String documentIdentifier) {
+    return new String[]{server};
+  }
+
+  /**
+   * Set up a session
+   */
+  protected void getSession() throws ManifoldCFException {
+    if (alfrescoTracker == null) {
       // Check for parameter validity
 
       if (StringUtils.isEmpty(username))
@@ -273,257 +300,97 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       if (StringUtils.isEmpty(protocol))
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.PROTOCOL_PARAM
             + " required but not set");
-      
+
       if (StringUtils.isEmpty(server))
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.SERVER_PARAM
             + " required but not set");
-      
+
       if (StringUtils.isEmpty(port))
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.PORT_PARAM
             + " required but not set");
-      
+
       if (StringUtils.isEmpty(path))
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.PATH_PARAM
             + " required but not set");
-    
-      int alfrescoPortSSL = 8043;
-      int maxTotalConnections = 40;
-      int maxHostConnections = 40;
-      int socketTimeout = 60000;
-
-      String sslKeyStoreType = "JCEKS";
-      String sslKeyStoreProvider = "";
-      String sslKeyStoreLocation = "ssl.repo.client.keystore";
-      String sslKeyStorePasswordFileLocation = "ssl-keystore-passwords.properties";
-      String sslTrustStoreType = "JCEKS";
-      String sslTrustStoreProvider = "";
-      String sslTrustStoreLocation = "ssl.repo.client.truststore";
-      String sslTrustStorePasswordFileLocation = "ssl-truststore-passwords.properties";
-
-      KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", sslKeyStoreType, sslKeyStoreProvider, sslKeyStorePasswordFileLocation, sslKeyStoreLocation);
-      KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", sslTrustStoreType, sslTrustStoreProvider, sslTrustStorePasswordFileLocation, sslTrustStoreLocation);
-      SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
-      SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader(configPath));
-
-      HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
-      sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), alfrescoPortSSL, maxTotalConnections, maxHostConnections, socketTimeout);
-
-      AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, alfrescoPortSSL);
-      repoClient.setBaseUrl(path);
-
-      TenantService tenantService = new SingleTServiceImpl();
-
-      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance(configPath);
-      dataModel.setStoreAll(true);
-
-      NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
-      namespaceDAO.setTenantService(tenantService);
-      namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
-
-      DictionaryDAOImpl dictionaryDAO = new DictionaryDAOImpl(namespaceDAO);
-      dictionaryDAO.setTenantService(tenantService);
-      dictionaryDAO.setDictionaryRegistryCache(new MemoryCache<String, DictionaryDAOImpl.DictionaryRegistry>());
-      dictionaryDAO.setDefaultAnalyserResourceBundleName("alfresco/model/dataTypeAnalyzers");
-
-      //@TODO - Currently this classloader is not valid, check method below; it relies on the presence of trackModel logic,
-      // which is not implemented yet
-      dictionaryDAO.setResourceClassLoader(getResourceClassLoader());
-
-      DictionaryComponent dictionaryComponent = new DictionaryComponent();
-      dictionaryComponent.setDictionaryDAO(dictionaryDAO);
-      //@TODO - cannot find StaticMessageLookup
-      //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
-
-      this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
-      trackModels(dataModel);
     }
   }
 
   /**
-   * Release the session, if it's time.
-   */
-  protected void releaseCheck() throws ManifoldCFException {
-//    if (lastSessionFetch == -1L)
-//      return;
-//
-//    long currentTime = System.currentTimeMillis();
-//    if (currentTime >= lastSessionFetch + timeToRelease) {
-//        lastSessionFetch = -1L;
-//    }
-  }
-
-  protected void checkConnection() throws ManifoldCFException,
-      ServiceInterruption, IOException, JSONException, AuthenticationException {
-    if(this.solrapiClient == null){
-      Logging.connectors.error(
-          "Alfresco: Error during checking the connection.");
-      throw new ManifoldCFException( "Alfresco: Error during checking the connection.");
-    }
-  }
-
-  /** This method is periodically called for all connectors that are connected but not
+   * This method is periodically called for all connectors that are connected but not
    * in active use.
    */
   @Override
   public void poll() throws ManifoldCFException {
   }
 
-  /** Queue "seed" documents.  Seed documents are the starting places for crawling activity.  Documents
-   * are seeded when this method calls appropriate methods in the passed in ISeedingActivity object.
+
+  /**
+   * Get the maximum number of documents to amalgamate together into one batch, for this connector.
    *
-   * This method can choose to find repository changes that happen only during the specified time interval.
-   * The seeds recorded by this method will be viewed by the framework based on what the
-   * getConnectorModel() method returns.
-   *
-   * It is not a big problem if the connector chooses to create more seeds than are
-   * strictly necessary; it is merely a question of overall work required.
-   *
-   * The times passed to this method may be interpreted for greatest efficiency.  The time ranges
-   * any given job uses with this connector will not overlap, but will proceed starting at 0 and going
-   * to the "current time", each time the job is run.  For continuous crawling jobs, this method will
-   * be called once, when the job starts, and at various periodic intervals as the job executes.
-   *
-   * When a job's specification is changed, the framework automatically resets the seeding start time to 0.  The
-   * seeding start time may also be set to 0 on each job run, depending on the connector model returned by
-   * getConnectorModel().
-   *
-   * Note that it is always ok to send MORE documents rather than less to this method.
-   *@param activities is the interface this method should use to perform whatever framework actions are desired.
-   *@param spec is a document specification (that comes from the job).
-   *@param startTime is the beginning of the time range to consider, inclusive.
-   *@param endTime is the end of the time range to consider, exclusive.
-   */
-  @Override
-  public void addSeedDocuments(ISeedingActivity activities,
-      DocumentSpecification spec, long startTime, long endTime)
-      throws ManifoldCFException, ServiceInterruption {
-
-      try {
-        getSession();
-      } catch (JSONException e) {
-        Logging.connectors.error("Connection failed: " + e.getMessage());
-      } catch (IOException e) {
-        Logging.connectors.error("Connection failed: " + e.getMessage());
-      } catch (AuthenticationException e) {
-        Logging.connectors.error("Connection failed: " + e.getMessage());
-      }
-
-      Logging.connectors.info("Fetching transactions: " + lastStatus);
-
-      List<Node> nodes = null;
-      ArrayList<Long> txs = new ArrayList<Long>();
-      try {
-
-        Transactions transactions = null;
-        synchronized (this) {
-          transactions = this.solrapiClient.getTransactions(
-              lastStatus.getCommitTime(), //fromCommitTime
-              lastStatus.getTxnId(), //minTxnId
-              null, //toCommitTime
-              null, //maxTxnId
-              maxResults); //maxResults
-          lastStatus = new IndexingSnapshot(new Date().getTime(),lastStatus.getTxnId()+maxResults);
-        }
-
-        Logging.connectors.info("Fetched "+transactions.getTransactions().size()+" transactions from solrApiClient");
-        GetNodesParameters getNodeParameters = new GetNodesParameters();
-        getNodeParameters.setTransactionIds(txs);
-        getNodeParameters.setStoreProtocol(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getProtocol());
-        getNodeParameters.setStoreIdentifier(StoreRef.STORE_REF_WORKSPACE_SPACESSTORE.getIdentifier());
-        for(Transaction transaction : transactions.getTransactions()) {
-          txs.add(transaction.getId());
-        }
-        nodes = solrapiClient.getNodes(getNodeParameters, maxResults);
-      } catch (AuthenticationException e) {
-        Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
-      } catch (IOException e) {
-        Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
-      } catch (JSONException e) {
-        Logging.connectors.error("Error on getNodes of following TxnIds "+txs);
-      }
-      if (nodes != null) {
-        for (Node node : nodes) {
-          Logging.connectors.info("Indexing node: " +
-              "nodeRef:"+node.getNodeRef()+
-              ",TXN ID:"+node.getTxnId()+
-              ",ID:"+node.getId()+
-              ",status:"+node.getStatus());
-
-          activities.addSeedDocument(String.valueOf(node.getId()));
-
-        }
-      }
-  }
-
-  private List<NodeMetaData> getNodesMetaData(NodeMetaDataParameters nmdp) throws AuthenticationException, IOException, JSONException {
-    return solrapiClient.getNodesMetaData(nmdp, 1);
-  }
-
-  /** Get the maximum number of documents to amalgamate together into one batch, for this connector.
-   *@return the maximum number. 0 indicates "unlimited".
+   * @return the maximum number. 0 indicates "unlimited".
    */
   @Override
   public int getMaxDocumentRequest() {
-    return maxResults;
+    return AlfrescoIndexTracker.RESULT_BATCH_SIZE;
   }
 
   /**
    * Return the list of relationship types that this connector recognizes.
-   * 
+   *
    * @return the list.
    */
   @Override
   public String[] getRelationshipTypes() {
-    return new String[] { RELATIONSHIP_CHILD };
+    return new String[]{RELATIONSHIP_CHILD};
   }
 
   /**
    * Read the content of a resource, replace the variable ${PARAMNAME} with the
    * value and copy it to the out.
-   * 
+   *
    * @param resName
    * @param out
    * @throws ManifoldCFException
    */
   private static void outputResource(String resName, IHTTPOutput out,
-      Locale locale, Map<String,String> paramMap) throws ManifoldCFException {
-    Messages.outputResourceWithVelocity(out,locale,resName,paramMap,true);
+                                     Locale locale, Map<String, String> paramMap) throws ManifoldCFException {
+    Messages.outputResourceWithVelocity(out, locale, resName, paramMap, true);
   }
 
-  /** Fill in Velocity parameters for the Server tab.
-  */
-  private static void fillInServerParameters(Map<String,String> paramMap, ConfigParams parameters)
-  {
+  /**
+   * Fill in Velocity parameters for the Server tab.
+   */
+  private static void fillInServerParameters(Map<String, String> paramMap, ConfigParams parameters) {
     String username = parameters.getParameter(AlfrescoConfig.USERNAME_PARAM);
     if (username == null)
       username = AlfrescoConfig.USERNAME_DEFAULT_VALUE;
     paramMap.put(AlfrescoConfig.USERNAME_PARAM, username);
 
     String password = parameters.getParameter(AlfrescoConfig.PASSWORD_PARAM);
-    if (password == null) 
+    if (password == null)
       password = AlfrescoConfig.PASSWORD_DEFAULT_VALUE;
     paramMap.put(AlfrescoConfig.PASSWORD_PARAM, password);
-    
+
     String protocol = parameters.getParameter(AlfrescoConfig.PROTOCOL_PARAM);
     if (protocol == null)
       protocol = AlfrescoConfig.PROTOCOL_DEFAULT_VALUE;
     paramMap.put(AlfrescoConfig.PROTOCOL_PARAM, protocol);
-    
+
     String server = parameters.getParameter(AlfrescoConfig.SERVER_PARAM);
     if (server == null)
       server = AlfrescoConfig.SERVER_DEFAULT_VALUE;
     paramMap.put(AlfrescoConfig.SERVER_PARAM, server);
-    
+
     String port = parameters.getParameter(AlfrescoConfig.PORT_PARAM);
     if (port == null)
       port = AlfrescoConfig.PORT_DEFAULT_VALUE;
     paramMap.put(AlfrescoConfig.PORT_PARAM, port);
-    
+
     String path = parameters.getParameter(AlfrescoConfig.PATH_PARAM);
     if (path == null)
       path = AlfrescoConfig.PATH_DEFAULT_VALUE;
     paramMap.put(AlfrescoConfig.PATH_PARAM, path);
-    
+
     String tenantDomain = parameters.getParameter(AlfrescoConfig.TENANT_DOMAIN_PARAM);
     if (tenantDomain == null)
       tenantDomain = "";
@@ -536,26 +403,21 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * connection information to the user. The coder can presume that the HTML
    * that is output from this configuration will be within appropriate <html>
    * and <body> tags.
-   * 
-   * @param threadContext
-   *          is the local thread context.
-   * @param out
-   *          is the output to which any HTML should be sent.
-   * @param parameters
-   *          are the configuration parameters, as they currently exist, for
-   *          this connection being configured.
+   *
+   * @param threadContext is the local thread context.
+   * @param out           is the output to which any HTML should be sent.
+   * @param parameters    are the configuration parameters, as they currently exist, for
+   *                      this connection being configured.
    */
   @Override
   public void viewConfiguration(IThreadContext threadContext, IHTTPOutput out,
-    Locale locale, ConfigParams parameters) throws ManifoldCFException, IOException {
-        
-    Map<String,String> paramMap = new HashMap<String,String>();
-        
-    // Fill in parameters for all tabs
+                                Locale locale, ConfigParams parameters) throws ManifoldCFException, IOException {
+
+    Map<String, String> paramMap = new HashMap<String, String>();
 
     // Server tab
     fillInServerParameters(paramMap, parameters);
-  
+
     outputResource(VIEW_CONFIG_FORWARD, out, locale, paramMap);
   }
 
@@ -564,52 +426,50 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * section of the connector's configuration page. Its purpose is to add the
    * required tabs to the list, and to output any javascript methods that might
    * be needed by the configuration editing HTML.
-   * 
-   * @param threadContext
-   *          is the local thread context.
-   * @param out
-   *          is the output to which any HTML should be sent.
-   * @param parameters
-   *          are the configuration parameters, as they currently exist, for
-   *          this connection being configured.
-   * @param tabsArray
-   *          is an array of tab names. Add to this array any tab names that are
-   *          specific to the connector.
+   *
+   * @param threadContext is the local thread context.
+   * @param out           is the output to which any HTML should be sent.
+   * @param parameters    are the configuration parameters, as they currently exist, for
+   *                      this connection being configured.
+   * @param tabsArray     is an array of tab names. Add to this array any tab names that are
+   *                      specific to the connector.
    */
   @Override
   public void outputConfigurationHeader(IThreadContext threadContext,
-      IHTTPOutput out, Locale locale, ConfigParams parameters, List<String> tabsArray)
+                                        IHTTPOutput out, Locale locale, ConfigParams parameters, List<String> tabsArray)
       throws ManifoldCFException, IOException {
     // Add Server tab
-    tabsArray.add(Messages.getString(locale,ALFRESCO_SERVER_TAB_RESOURCE));
+    tabsArray.add(Messages.getString(locale, ALFRESCO_SERVER_TAB_RESOURCE));
 
-    Map<String,String> paramMap = new HashMap<String,String>();
-        
+    Map<String, String> paramMap = new HashMap<String, String>();
+
     // Fill in parameters for all tabs
     fillInServerParameters(paramMap, parameters);
 
     outputResource(EDIT_CONFIG_HEADER_FORWARD, out, locale, paramMap);
   }
 
-  /** Output the configuration body section.
+  /**
+   * Output the configuration body section.
    * This method is called in the body section of the connector's configuration page.  Its purpose is to present the required form elements for editing.
    * The coder can presume that the HTML that is output from this configuration will be within appropriate <html>, <body>, and <form> tags.  The name of the
    * form is "editconnection".
-   *@param threadContext is the local thread context.
-   *@param out is the output to which any HTML should be sent.
-   *@param parameters are the configuration parameters, as they currently exist, for this connection being configured.
-   *@param tabName is the current tab name.
+   *
+   * @param threadContext is the local thread context.
+   * @param out           is the output to which any HTML should be sent.
+   * @param parameters    are the configuration parameters, as they currently exist, for this connection being configured.
+   * @param tabName       is the current tab name.
    */
   @Override
   public void outputConfigurationBody(IThreadContext threadContext,
-      IHTTPOutput out, Locale locale, ConfigParams parameters, String tabName)
+                                      IHTTPOutput out, Locale locale, ConfigParams parameters, String tabName)
       throws ManifoldCFException, IOException {
-    
+
     // Do the Server tab
-    Map<String,String> paramMap = new HashMap<String,String>();
+    Map<String, String> paramMap = new HashMap<String, String>();
     paramMap.put("TabName", tabName);
     fillInServerParameters(paramMap, parameters);
-    outputResource(EDIT_CONFIG_FORWARD_SERVER, out, locale, paramMap);  
+    outputResource(EDIT_CONFIG_FORWARD_SERVER, out, locale, paramMap);
   }
 
   /**
@@ -618,22 +478,19 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * data for a connection has been posted. Its purpose is to gather form
    * information and modify the configuration parameters accordingly. The name
    * of the posted form is "editconnection".
-   * 
-   * @param threadContext
-   *          is the local thread context.
-   * @param variableContext
-   *          is the set of variables available from the post, including binary
-   *          file post information.
-   * @param parameters
-   *          are the configuration parameters, as they currently exist, for
-   *          this connection being configured.
+   *
+   * @param threadContext   is the local thread context.
+   * @param variableContext is the set of variables available from the post, including binary
+   *                        file post information.
+   * @param parameters      are the configuration parameters, as they currently exist, for
+   *                        this connection being configured.
    * @return null if all is well, or a string error message if there is an error
    *         that should prevent saving of the connection (and cause a
    *         redirection to an error page).
    */
   @Override
   public String processConfigurationPost(IThreadContext threadContext,
-      IPostParameters variableContext, Locale locale, ConfigParams parameters)
+                                         IPostParameters variableContext, Locale locale, ConfigParams parameters)
       throws ManifoldCFException {
 
     String username = variableContext.getParameter(AlfrescoConfig.USERNAME_PARAM);
@@ -645,71 +502,33 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     if (password != null) {
       parameters.setParameter(AlfrescoConfig.PASSWORD_PARAM, password);
     }
-    
+
     String protocol = variableContext.getParameter(AlfrescoConfig.PROTOCOL_PARAM);
     if (protocol != null) {
       parameters.setParameter(AlfrescoConfig.PROTOCOL_PARAM, protocol);
     }
-    
+
     String server = variableContext.getParameter(AlfrescoConfig.SERVER_PARAM);
     if (server != null) {
       parameters.setParameter(AlfrescoConfig.SERVER_PARAM, server);
     }
-    
+
     String port = variableContext.getParameter(AlfrescoConfig.PORT_PARAM);
-    if (port != null){
+    if (port != null) {
       parameters.setParameter(AlfrescoConfig.PORT_PARAM, port);
     }
-    
+
     String path = variableContext.getParameter(AlfrescoConfig.PATH_PARAM);
     if (path != null) {
       parameters.setParameter(AlfrescoConfig.PATH_PARAM, path);
     }
-    
+
     String tenantDomain = variableContext.getParameter(AlfrescoConfig.TENANT_DOMAIN_PARAM);
-    if (tenantDomain != null){
+    if (tenantDomain != null) {
       parameters.setParameter(AlfrescoConfig.TENANT_DOMAIN_PARAM, tenantDomain);
     }
-    
+
     return null;
-  }
-
-  /** Fill in Velocity parameters for the LuceneQuery tab.
-  */
-  private static void fillInLuceneQueryParameters(Map<String,String> paramMap, DocumentSpecification ds)
-  {
-    int i = 0;
-    String luceneQuery = "";
-    while (i < ds.getChildCount()) {
-      SpecificationNode sn = ds.getChild(i);
-      if (sn.getType().equals(JOB_STARTPOINT_NODE_TYPE)) {
-        luceneQuery = sn.getAttributeValue(AlfrescoConfig.LUCENE_QUERY_PARAM);
-      }
-      i++;
-    }
-    paramMap.put(AlfrescoConfig.LUCENE_QUERY_PARAM, luceneQuery);
-  }
-
-  /**
-   * View specification. This method is called in the body section of a job's
-   * view page. Its purpose is to present the document specification information
-   * to the user. The coder can presume that the HTML that is output from this
-   * configuration will be within appropriate <html> and <body> tags.
-   * 
-   * @param out
-   *          is the output to which any HTML should be sent.
-   * @param ds
-   *          is the current document specification for this job.
-   */
-  @Override
-  public void viewSpecification(IHTTPOutput out, Locale locale, DocumentSpecification ds)
-      throws ManifoldCFException, IOException {
-    Map<String,String> paramMap = new HashMap<String,String>();
-        
-    // Fill in parameters from all tabs
-    fillInLuceneQueryParameters(paramMap, ds);
-
-    outputResource(VIEW_SPEC_FORWARD, out, locale, paramMap);
   }
 
   /**
@@ -718,18 +537,16 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * connection has been posted. Its purpose is to gather form information and
    * modify the document specification accordingly. The name of the posted form
    * is "editjob".
-   * 
-   * @param variableContext
-   *          contains the post data, including binary file-upload information.
-   * @param ds
-   *          is the current document specification for this job.
+   *
+   * @param variableContext contains the post data, including binary file-upload information.
+   * @param ds              is the current document specification for this job.
    * @return null if all is well, or a string error message if there is an error
    *         that should prevent saving of the job (and cause a redirection to
    *         an error page).
    */
   @Override
   public String processSpecificationPost(IPostParameters variableContext,
-      Locale locale, DocumentSpecification ds) throws ManifoldCFException {
+                                         Locale locale, DocumentSpecification ds) throws ManifoldCFException {
     String luceneQuery = variableContext.getParameter(AlfrescoConfig.LUCENE_QUERY_PARAM);
     if (luceneQuery != null) {
       int i = 0;
@@ -737,8 +554,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
         SpecificationNode oldNode = ds.getChild(i);
         if (oldNode.getType().equals(JOB_STARTPOINT_NODE_TYPE)) {
           ds.removeChild(i);
-        }
-        else
+        } else
           i++;
       }
       SpecificationNode node = new SpecificationNode(JOB_STARTPOINT_NODE_TYPE);
@@ -750,391 +566,22 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
   }
 
   /**
-   * Output the specification body section. This method is called in the body
-   * section of a job page which has selected a repository connection of the
-   * current type. Its purpose is to present the required form elements for
-   * editing. The coder can presume that the HTML that is output from this
-   * configuration will be within appropriate <html>, <body>, and <form> tags.
-   * The name of the form is "editjob".
-   * 
-   * @param out
-   *          is the output to which any HTML should be sent.
-   * @param ds
-   *          is the current document specification for this job.
-   * @param tabName
-   *          is the current tab name.
-   */
-  @Override
-  public void outputSpecificationBody(IHTTPOutput out, Locale locale,
-      DocumentSpecification ds, String tabName) throws ManifoldCFException,
-      IOException {
-    
-    // Do all tabs in turn.
-        
-    // LuceneQuery tab
-    Map<String,String> paramMap = new HashMap<String,String>();
-    paramMap.put("TabName", tabName);
-    fillInLuceneQueryParameters(paramMap, ds);
-    outputResource(EDIT_SPEC_FORWARD_LUCENEQUERY, out, locale, paramMap);
-  }
-
-  /**
    * Output the specification header section. This method is called in the head
    * section of a job page which has selected a repository connection of the
    * current type. Its purpose is to add the required tabs to the list, and to
    * output any javascript methods that might be needed by the job editing HTML.
-   * 
-   * @param out
-   *          is the output to which any HTML should be sent.
-   * @param ds
-   *          is the current document specification for this job.
-   * @param tabsArray
-   *          is an array of tab names. Add to this array any tab names that are
-   *          specific to the connector.
+   *
+   * @param out       is the output to which any HTML should be sent.
+   * @param ds        is the current document specification for this job.
+   * @param tabsArray is an array of tab names. Add to this array any tab names that are
+   *                  specific to the connector.
    */
   @Override
   public void outputSpecificationHeader(IHTTPOutput out,
-      Locale locale, DocumentSpecification ds, List<String> tabsArray)
+                                        Locale locale, DocumentSpecification ds, List<String> tabsArray)
       throws ManifoldCFException, IOException {
-    // Add LuceneQuery tab
-    tabsArray.add(Messages.getString(locale,TAB_LABEL_LUCENE_QUERY_RESOURCE));
-        
     // Fill in parameters from all tabs
-    Map<String,String> paramMap = new HashMap<String,String>();
-        
-    // LuceneQuery tab
-    fillInLuceneQueryParameters(paramMap, ds);
-
+    Map<String, String> paramMap = new HashMap<String, String>();
     outputResource(EDIT_SPEC_HEADER_FORWARD, out, locale, paramMap);
   }
-
-  /** Process a set of documents.
-   * This is the method that should cause each document to be fetched, processed, and the results either added
-   * to the queue of documents for the current job, and/or entered into the incremental ingestion manager.
-   * The document specification allows this class to filter what is done based on the job.
-   *@param documentIdentifiers is the set of document identifiers to process.
-   *@param versions is the corresponding document versions to process, as returned by getDocumentVersions() above.
-   *       The implementation may choose to ignore this parameter and always process the current version.
-   *@param activities is the interface this method should use to queue up new document references
-   * and ingest documents.
-   *@param spec is the document specification.
-   *@param scanOnly is an array corresponding to the document identifiers.  It is set to true to indicate when the processing
-   * should only find other references, and should not actually call the ingestion methods.
-   */
-  @Override
-  public void processDocuments(String[] documentIdentifiers, String[] versions,
-      IProcessActivity activities, DocumentSpecification spec,
-      boolean[] scanOnly) throws ManifoldCFException, ServiceInterruption {
-
-    Logging.connectors.debug("Alfresco: Inside processDocuments");
-    int i = 0;
-
-    while (i < documentIdentifiers.length) {
-      long startTime = System.currentTimeMillis();
-      RepositoryDocument rd = new RepositoryDocument();
-      Long nodeId = Long.valueOf(documentIdentifiers[i]);
-      
-      NodeMetaDataParameters nmdp = new NodeMetaDataParameters();
-      nmdp.setFromNodeId(nodeId);
-      nmdp.setToNodeId(nodeId);
-      nmdp.setIncludeAclId(true);
-      nmdp.setIncludeAspects(true);
-      nmdp.setIncludeChildAssociations(false);
-      nmdp.setIncludeChildIds(true);
-      nmdp.setIncludeNodeRef(true);
-      nmdp.setIncludeOwner(true);
-      nmdp.setIncludeParentAssociations(true);
-      nmdp.setIncludePaths(true);
-      nmdp.setIncludeProperties(false);
-      nmdp.setIncludeType(true);
-      nmdp.setIncludeTxnId(true);
-      
-      List<NodeMetaData> nodeMetaDatas = null;
-      String version = StringUtils.EMPTY;
-      try {
-        nodeMetaDatas = getNodesMetaData(nmdp);
-        for(NodeMetaData metaData : nodeMetaDatas) {
-          Logging.connectors.info("Indexing metadata: " +
-              "Type:"+metaData.getType()+
-              ",ACL ID:"+metaData.getAclId()+
-              ",Paths:"+metaData.getPaths()+
-              ",Owner:"+metaData.getOwner()+
-              ",Tenant:"+metaData.getTenantDomain()+
-              ",Ancestors (number):"+metaData.getAncestors().size()+
-              ",Child assocs (number):"+metaData.getChildAssocs().size()+
-              ",Parent assocs (number):"+metaData.getParentAssocs().size()+
-              ",Aspects:"+metaData.getAspects()+
-              ",Properties:"+metaData.getProperties());
-          
-          Map<QName, PropertyValue> properties = metaData.getProperties();
-          version = properties.get(ContentModel.PROP_VERSION_LABEL).toString();
-          Iterator<Entry<QName, PropertyValue>> propsIterator = properties.entrySet().iterator();
-          while(propsIterator.hasNext()){
-            Entry<QName, PropertyValue> entry = propsIterator.next();
-            String prefix = entry.getKey().getPrefixString();
-            String localname = entry.getKey().getLocalName();
-            String fieldName = prefix+":"+localname;
-            String value = entry.getValue().toString();
-            rd.addField(fieldName, value);
-            Logging.connectors.debug("Indexing property: " +fieldName + " , value: " + value);
-          }
-        }
-      } catch (NamespaceException e) {
-        Logging.connectors.error("Error on getNodesMetaData fromId "+nmdp.getFromNodeId()+" toId "+nmdp.getToNodeId(),e);
-      } catch (AuthenticationException e) {
-        Logging.connectors.error("Error on getNodesMetaData fromId "+nmdp.getFromNodeId()+" toId "+nmdp.getToNodeId(),e);
-      } catch (IOException e) {
-        Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
-      } catch (JSONException e) {
-        Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
-      }
-      
-      String documentURI = nodeId + "|" + version;
-      activities.ingestDocument(String.valueOf(nodeId), version, documentURI, rd);
-      
-      
-      /**
-       * TODO - for each seed document we will extract metadata
-       * if the node is a folder then we need to get all the children and adding them as document references.
-       * In this way the crawler will add all the children in the navigation
-       * 
-       */
-      
-//      String uuid = NodeUtils.getUuidFromNodeReference(nodeReference);
-//
-//      if (Logging.connectors.isDebugEnabled())
-//        Logging.connectors.debug("Alfresco: Processing document identifier '"
-//            + nodeReference + "'");
-//
-//      Reference reference = new Reference();
-//      reference.setStore(SearchUtils.STORE);
-//      reference.setUuid(uuid);
-//
-//      Predicate predicate = new Predicate();
-//      predicate.setStore(SearchUtils.STORE);
-//      predicate.setNodes(new Reference[] { reference });
-//
-//      // getting properties
-//      Node resultNode = NodeUtils.get(username, password, session, predicate);
-//      
-//      String errorCode = "OK";
-//      String errorDesc = StringUtils.EMPTY;
-//
-//      NamedValue[] properties = resultNode.getProperties();
-//      boolean isDocument = ContentModelUtils.isDocument(properties);
-//      
-//      boolean isFolder = ContentModelUtils.isFolder(username, password, session, reference);
-      
-      //a generic node in Alfresco could have child-associations
-//      if (isFolder) {
-//        // ingest all the children of the folder
-//        QueryResult queryResult = SearchUtils.getChildren(username, password, session, reference);
-//        ResultSet resultSet = queryResult.getResultSet();
-//        ResultSetRow[] resultSetRows = resultSet.getRows();
-//        for (ResultSetRow resultSetRow : resultSetRows) {
-//          NamedValue[] childProperties = resultSetRow.getColumns();
-//          String childNodeReference = PropertiesUtils.getNodeReference(childProperties);
-//          activities.addDocumentReference(childNodeReference, nodeReference, RELATIONSHIP_CHILD);
-//        }
-//      } 
-      
-      //a generic node in Alfresco could also have binaries content
-//      if (isDocument) {
-//        // this is a content to ingest
-//        InputStream is = null;
-//        long fileLength = 0;
-//        try {
-//          //properties ingestion
-//          RepositoryDocument rd = new RepositoryDocument();
-//          PropertiesUtils.ingestProperties(rd, properties);
-//
-//          // binaries ingestion - in Alfresco we could have more than one binary for each node (custom content models)
-//          List<NamedValue> contentProperties = PropertiesUtils.getContentProperties(properties);
-//          for (NamedValue contentProperty : contentProperties) {
-//            //we are ingesting all the binaries defined as d:content property in the Alfresco content model
-//            Content binary = ContentReader.read(username, password, session, predicate, contentProperty.getName());
-//            fileLength = binary.getLength();
-//            is = ContentReader.getBinary(binary, username, password, session);
-//            rd.setBinary(is, fileLength);
-//            
-//            //configPath is the node reference only if the node has an unique content stream
-//            //For a node with a single d:content property: configPath = node reference
-//            String configPath = PropertiesUtils.getNodeReference(properties);
-//            
-//            //For a node with multiple d:content properties: configPath = node reference;QName
-//            //The QName of a property of type d:content will be appended to the node reference
-//            if(contentProperties.size()>1){
-//              configPath = configPath + INGESTION_SEPARATOR_FOR_MULTI_BINARY + contentProperty.getName();
-//            }
-//            
-//            //version label
-//            String version = PropertiesUtils.getVersionLabel(properties);
-//            
-//            //the document uri is related to the specific d:content property available in the node
-//            //we want to ingest each content stream that are nested in a single node
-//            String documentURI = binary.getUrl();
-//            activities.ingestDocument(configPath, version, documentURI, rd);
-//          }
-//          
-//        } finally {
-//          try {
-//            if(is!=null){
-//              is.close();
-//            }
-//          } catch (InterruptedIOException e) {
-//            errorCode = "Interrupted error";
-//            errorDesc = e.getMessage();
-//            throw new ManifoldCFException(e.getMessage(), e,
-//                ManifoldCFException.INTERRUPTED);
-//          } catch (IOException e) {
-//            errorCode = "IO ERROR";
-//            errorDesc = e.getMessage();
-//            Logging.connectors.warn(
-//                "Alfresco: IOException closing file input stream: "
-//                    + e.getMessage(), e);
-//          }
-//          
-//          AuthenticationUtils.endSession();
-//          session = null;
-//          
-//          activities.recordActivity(new Long(startTime), ACTIVITY_READ,
-//              fileLength, nodeReference, errorCode, errorDesc, null);
-//        }
-        
-//     }
-      i++;
-    }
-  }
-  
-  /** The short version of getDocumentVersions.
-   * Get document versions given an array of document identifiers.
-   * This method is called for EVERY document that is considered. It is
-   * therefore important to perform as little work as possible here.
-   *@param documentIdentifiers is the array of local document identifiers, as understood by this connector.
-   *@param spec is the current document specification for the current job.  If there is a dependency on this
-   * specification, then the version string should include the pertinent data, so that reingestion will occur
-   * when the specification changes.  This is primarily useful for metadata.
-   *@return the corresponding version strings, with null in the places where the document no longer exists.
-   * Empty version strings indicate that there is no versioning ability for the corresponding document, and the document
-   * will always be processed.
-   */
-  @Override
-  public String[] getDocumentVersions(String[] documentIdentifiers,
-      DocumentSpecification spec) throws ManifoldCFException,
-      ServiceInterruption {
-    String[] rval = new String[documentIdentifiers.length];
-    int i = 0;
-    while (i < rval.length){
-      String nodeReference = documentIdentifiers[i];
-//      String uuid = NodeUtils.getUuidFromNodeReference(nodeReference);
-//      
-//      Reference reference = new Reference();
-//      reference.setStore(SearchUtils.STORE);
-//      reference.setUuid(uuid);
-//      
-//      Predicate predicate = new Predicate();
-//      predicate.setStore(SearchUtils.STORE);
-//      predicate.setNodes(new Reference[]{reference});
-//      
-//      Node node = NodeUtils.get(username, password, session, predicate);
-//      if(node.getProperties()!=null){
-//        NamedValue[] properties = node.getProperties();
-//        boolean isDocument = ContentModelUtils.isDocument(properties);
-//        if(isDocument){
-//          boolean isVersioned = NodeUtils.isVersioned(node.getAspects());
-//          if(isVersioned){
-//            rval[i] = NodeUtils.getVersionLabel(properties);
-//          } else {
-//            //a document that doesn't contain versioning information will always be processed
-//            rval[i] = StringUtils.EMPTY;
-//          }
-//        } else {
-//          //a space will always be processed
-//          rval[i] = StringUtils.EMPTY;
-//        }
-//      }
-      i++;
-    }
-    return rval;
-  }
-
-  private void trackModels(AlfrescoSolrDataModel dataModel) throws AuthenticationException, IOException, JSONException
-  {
-    // track models
-    // reflect changes changes and update on disk copy
-
-    long start = System.nanoTime();
-
-    List<AlfrescoModelDiff> modelDiffs = this.solrapiClient.getModelsDiff(dataModel.getAlfrescoModels());
-    HashMap<String, M2Model> modelMap = new HashMap<String, M2Model>();
-
-    for (AlfrescoModelDiff modelDiff : modelDiffs)
-    {
-      switch (modelDiff.getType())
-      {
-        case NEW:
-          AlfrescoModel newModel = this.solrapiClient.getModel(modelDiff.getModelName());
-          for (M2Namespace namespace : newModel.getModel().getNamespaces())
-          {
-            modelMap.put(namespace.getUri(), newModel.getModel());
-          }
-          break;
-      }
-    }
-
-    HashSet<String> loadedModels = new HashSet<String>();
-    for (M2Model model : modelMap.values())
-    {
-      loadModel(modelMap, loadedModels, model, dataModel);
-    }
-    if(modelDiffs.size() > 0)
-    {
-      dataModel.afterInitModels();
-    }
-
-    File alfrescoModelDir = new File(configPath, "alfrescoModels");
-    if (!alfrescoModelDir.exists())
-    {
-      alfrescoModelDir.mkdir();
-    }
-    for (AlfrescoModelDiff modelDiff : modelDiffs)
-    {
-      switch (modelDiff.getType())
-      {
-        case NEW:
-          M2Model newModel = dataModel.getM2Model(modelDiff.getModelName());
-          // add on file
-          File newFile = new File(alfrescoModelDir, getModelFileName(newModel));
-          FileOutputStream nos = new FileOutputStream(newFile);
-          newModel.toXML(nos);
-          nos.flush();
-          nos.close();
-          break;
-      }
-    }
-  }
-
-  private String getModelFileName(M2Model model) {
-    return model.getName().replace(":", ".") + "." + model.getChecksum(ModelDefinition.XMLBindingType.DEFAULT) + ".xml";
-  }
-
-  private void loadModel(Map<String, M2Model> modelMap, HashSet<String> loadedModels, M2Model model, AlfrescoSolrDataModel dataModel) {
-    String modelName = model.getName();
-    if (loadedModels.contains(modelName) == false)
-    {
-      for (M2Namespace importNamespace : model.getImports())
-      {
-        M2Model importedModel = modelMap.get(importNamespace.getUri());
-        if (importedModel != null) {
-          // Ensure that the imported model is loaded first
-          loadModel(modelMap, loadedModels, importedModel, dataModel);
-        }
-      }
-
-      dataModel.putModel(model);
-      loadedModels.add(modelName);
-      Logging.connectors.info("Loading model " + model.getName());
-    }
-  }
-
 }
