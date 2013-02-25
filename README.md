@@ -81,10 +81,6 @@ Configure Manifold and start!
 * Add Repository Connection (List of Repository Connections)
   * Set name (free)
   * Set type to <code>AlfrescoWebscript</code>
-  * Click on <code>Throttling</code> tab
-  * Set <code>Max Connections</code> to <code>1</code>
-  * Click on <code>AlfrescoWebscriptConnector.Server</code> tab
-  * Set <code>Path</code> to <code>/alfresco-instance</code> (other options by default)
   * Save (all options by default)
 
 * Add Job (List all Jobs)
