@@ -36,7 +36,7 @@ import java.util.*;
 public class AlfrescoIndexTracker {
 
   //@TODO - Static parameters that should be configurable
-  public static final int RESULT_BATCH_SIZE = 100;
+  public static final int RESULT_BATCH_SIZE = 10;
   private static final int ALFRESCO_SSL_PORT = 8043;
   private static final int MAX_TOTAL_CONNECTIONS = 40;
   private static final int MAX_HOST_CONNECTIONS = 40;
@@ -64,7 +64,7 @@ public class AlfrescoIndexTracker {
   /**
    * contains the Snapshot of indexing from the last thread being allocated *
    */
-  private static volatile IndexingSnapshot lastStatus = new IndexingSnapshot(0, 0);
+  private static volatile IndexingSnapshot lastStatus = new IndexingSnapshot(0,0);
 
   public AlfrescoIndexTracker(String configPath, String username, String password, String protocol, String server, String port, String path) {
     this.configPath = configPath;
@@ -225,6 +225,8 @@ public class AlfrescoIndexTracker {
     } catch (IOException e) {
       Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
     } catch (JSONException e) {
+      Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
+    } catch (Exception e){
       Logging.connectors.error("Error on getNodesMetaData fromId " + nmdp.getFromNodeId() + " toId " + nmdp.getToNodeId(), e);
     }
 
@@ -430,34 +432,18 @@ public class AlfrescoIndexTracker {
     String[] rval = new String[documentIdentifiers.length];
     int i = 0;
     while (i < rval.length) {
-      String nodeReference = documentIdentifiers[i];
-//      String uuid = NodeUtils.getUuidFromNodeReference(nodeReference);
-//
-//      Reference reference = new Reference();
-//      reference.setStore(SearchUtils.STORE);
-//      reference.setUuid(uuid);
-//
-//      Predicate predicate = new Predicate();
-//      predicate.setStore(SearchUtils.STORE);
-//      predicate.setNodes(new Reference[]{reference});
-//
-//      Node node = NodeUtils.get(username, password, session, predicate);
-//      if(node.getProperties()!=null){
-//        NamedValue[] properties = node.getProperties();
-//        boolean isDocument = ContentModelUtils.isDocument(properties);
-//        if(isDocument){
-//          boolean isVersioned = NodeUtils.isVersioned(node.getAspects());
-//          if(isVersioned){
-//            rval[i] = NodeUtils.getVersionLabel(properties);
-//          } else {
-//            //a document that doesn't contain versioning information will always be processed
-//            rval[i] = StringUtils.EMPTY;
-//          }
-//        } else {
-//          //a space will always be processed
-//          rval[i] = StringUtils.EMPTY;
-//        }
-//      }
+      /**
+       * TODO we should retrieve the version information for each node
+       * ManifoldCF will process every node if rval[i] is empty, otherwise
+       * will process nodes with a new version.
+       * 
+       * ManifoldCF will not process version nodes that have been previously processed
+       * 
+       * So this means that we should set a value related to each last version of the node that
+       * we are processing
+       * 
+       */
+      rval[i] = StringUtils.EMPTY;
       i++;
     }
     return rval;

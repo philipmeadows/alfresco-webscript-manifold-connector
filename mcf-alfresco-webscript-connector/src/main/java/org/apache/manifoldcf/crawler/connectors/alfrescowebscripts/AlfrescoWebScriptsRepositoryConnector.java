@@ -31,6 +31,7 @@ import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.apache.manifoldcf.crawler.system.Logging;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -104,6 +105,9 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * The root node for the Alfresco connector configuration in ManifoldCF
    */
   private static final String JOB_STARTPOINT_NODE_TYPE = "startpoint";
+  
+  /** Read activity */
+  protected final static String ACTIVITY_READ = "read document";
 
   private static AlfrescoIndexTracker alfrescoTracker;
 
@@ -176,12 +180,19 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     Logging.connectors.debug("Alfresco: Inside processDocuments");
     int i = 0;
-
     while (i < documentIdentifiers.length) {
+      long startTime = System.currentTimeMillis();
       Long nodeId = Long.valueOf(documentIdentifiers[i]);
       Pair<RepositoryDocument, String> rd = alfrescoTracker.processMetaData(nodeId);
-      String documentURI = nodeId + "|" + rd.getSecond();
-      activities.ingestDocument(String.valueOf(nodeId), rd.getSecond(), documentURI, rd.getFirst());
+      String documentURI = StringUtils.EMPTY;
+      if(rd!=null){
+        documentURI = nodeId + "|" + rd.getSecond();
+        activities.ingestDocument(String.valueOf(nodeId), rd.getSecond(), documentURI, rd.getFirst());
+      }
+      
+//      activities.recordActivity(new Long(startTime), ACTIVITY_READ,
+//          fileLength, nodeId, errorCode, errorDesc, null);
+      
       i++;
     }
   }
@@ -206,7 +217,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       ServiceInterruption {
     return alfrescoTracker.getDocumentVersions(documentIdentifiers, spec);
   }
-
+  
   /**
    * Connect.
    *
