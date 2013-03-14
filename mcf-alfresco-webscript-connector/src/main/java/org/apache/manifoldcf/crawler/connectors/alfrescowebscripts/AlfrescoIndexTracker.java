@@ -76,43 +76,45 @@ public class AlfrescoIndexTracker {
     this.path = path;
   }
 
-  public void init() {
-    KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", SSL_KEY_STORE_TYPE, SSL_KEY_STORE_PROVIDER, SSL_KEY_STORE_PASSWORD_FILE_LOCATION, SSL_KEY_STORE_LOCATION);
-    KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", SSL_TRUST_STORE_TYPE, SSL_TRUST_STORE_PROVIDER, SSL_TRUST_STORE_PASSWORD_FILE_LOCATION, SSL_TRUST_STORE_LOCATION);
-    SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
-    SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader(configPath));
-
-    HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
-        sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), ALFRESCO_SSL_PORT, MAX_TOTAL_CONNECTIONS, MAX_HOST_CONNECTIONS, SOCKET_TIMEOUT);
-
-    AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, ALFRESCO_SSL_PORT);
-    repoClient.setBaseUrl(path);
-
-    TenantService tenantService = new SingleTServiceImpl();
-
-    AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance(configPath);
-    dataModel.setStoreAll(true);
-
-    NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
-    namespaceDAO.setTenantService(tenantService);
-    namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
-
-    DictionaryDAOImpl dictionaryDAO = new DictionaryDAOImpl(namespaceDAO);
-    dictionaryDAO.setTenantService(tenantService);
-    dictionaryDAO.setDictionaryRegistryCache(new MemoryCache<String, DictionaryDAOImpl.DictionaryRegistry>());
-    dictionaryDAO.setDefaultAnalyserResourceBundleName("alfresco/model/dataTypeAnalyzers");
-    dictionaryDAO.setResourceClassLoader(getResourceClassLoader());
-
-    DictionaryComponent dictionaryComponent = new DictionaryComponent();
-    dictionaryComponent.setDictionaryDAO(dictionaryDAO);
-    //@TODO - cannot find StaticMessageLookup
-    //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
-
-    this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
-    trackModels(dataModel);
+  public void init() throws ManifoldCFException {
+    if(this.solrapiClient==null){
+      KeyStoreParameters keyStoreParameters = new KeyStoreParameters("SSL Key Store", SSL_KEY_STORE_TYPE, SSL_KEY_STORE_PROVIDER, SSL_KEY_STORE_PASSWORD_FILE_LOCATION, SSL_KEY_STORE_LOCATION);
+      KeyStoreParameters trustStoreParameters = new KeyStoreParameters("SSL Trust Store", SSL_TRUST_STORE_TYPE, SSL_TRUST_STORE_PROVIDER, SSL_TRUST_STORE_PASSWORD_FILE_LOCATION, SSL_TRUST_STORE_LOCATION);
+      SSLEncryptionParameters sslEncryptionParameters = new SSLEncryptionParameters(keyStoreParameters, trustStoreParameters);
+      SolrKeyResourceLoader keyResourceLoader = new SolrKeyResourceLoader(new SolrResourceLoader(configPath));
+  
+      HttpClientFactory httpClientFactory = new HttpClientFactory(HttpClientFactory.SecureCommsType.NONE,
+          sslEncryptionParameters, keyResourceLoader, null, null, server, new Integer(port), ALFRESCO_SSL_PORT, MAX_TOTAL_CONNECTIONS, MAX_HOST_CONNECTIONS, SOCKET_TIMEOUT);
+  
+      AlfrescoHttpClient repoClient = httpClientFactory.getRepoClient(server, ALFRESCO_SSL_PORT);
+      repoClient.setBaseUrl(path);
+  
+      TenantService tenantService = new SingleTServiceImpl();
+  
+      AlfrescoSolrDataModel dataModel = AlfrescoSolrDataModel.getInstance(configPath);
+      dataModel.setStoreAll(true);
+  
+      NamespaceDAOImpl namespaceDAO = new NamespaceDAOImpl();
+      namespaceDAO.setTenantService(tenantService);
+      namespaceDAO.setNamespaceRegistryCache(new MemoryCache<String, NamespaceDAOImpl.NamespaceRegistry>());
+  
+      DictionaryDAOImpl dictionaryDAO = new DictionaryDAOImpl(namespaceDAO);
+      dictionaryDAO.setTenantService(tenantService);
+      dictionaryDAO.setDictionaryRegistryCache(new MemoryCache<String, DictionaryDAOImpl.DictionaryRegistry>());
+      dictionaryDAO.setDefaultAnalyserResourceBundleName("alfresco/model/dataTypeAnalyzers");
+      dictionaryDAO.setResourceClassLoader(getResourceClassLoader());
+  
+      DictionaryComponent dictionaryComponent = new DictionaryComponent();
+      dictionaryComponent.setDictionaryDAO(dictionaryDAO);
+      //@TODO - cannot find StaticMessageLookup
+      //dictionaryComponent.setMessageLookup(new StaticMessageLookup());
+  
+      this.solrapiClient = new SOLRAPIClient(repoClient, dictionaryComponent, namespaceDAO);
+      trackModels(dataModel);
+    }
   }
 
-  private void trackModels(AlfrescoSolrDataModel dataModel) {
+  private void trackModels(AlfrescoSolrDataModel dataModel) throws ManifoldCFException {
     try {
       List<AlfrescoModelDiff> modelDiffs = this.solrapiClient.getModelsDiff(dataModel.getAlfrescoModels());
       HashMap<String, M2Model> modelMap = new HashMap<String, M2Model>();
@@ -153,12 +155,18 @@ public class AlfrescoIndexTracker {
             break;
         }
       }
+    } catch (AlfrescoRuntimeException e){
+      Logging.connectors.error("Error on trackModels; indexStatus: "+lastStatus, e);
+      throw new ManifoldCFException("Error on trackModels",e);
     } catch (IOException e) {
-
+      Logging.connectors.error("Error on trackModels; indexStatus: "+lastStatus, e);
+      throw new ManifoldCFException("Error on trackModels",e);
     } catch (AuthenticationException e) {
       Logging.connectors.error("Error on trackModels; indexStatus: "+lastStatus, e);
+      throw new ManifoldCFException("Error on trackModels",e);
     } catch (JSONException e) {
       Logging.connectors.error("Error on trackModels; indexStatus: "+lastStatus, e);
+      throw new ManifoldCFException("Error on trackModels",e);
     }
   }
 
