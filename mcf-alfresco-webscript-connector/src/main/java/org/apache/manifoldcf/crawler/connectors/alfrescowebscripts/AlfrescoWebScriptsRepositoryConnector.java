@@ -19,22 +19,27 @@
  */
 package org.apache.manifoldcf.crawler.connectors.alfrescowebscripts;
 
-import org.alfresco.util.Pair;
-import org.apache.commons.lang.StringUtils;
-import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
-import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
-import org.apache.manifoldcf.core.interfaces.*;
-import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
-import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
-import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
-import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
-import org.apache.manifoldcf.crawler.system.Logging;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.alfresco.util.Pair;
+import org.apache.commons.lang.StringUtils;
+import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
+import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
+import org.apache.manifoldcf.core.interfaces.ConfigParams;
+import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
+import org.apache.manifoldcf.core.interfaces.IPostParameters;
+import org.apache.manifoldcf.core.interfaces.IThreadContext;
+import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
+import org.apache.manifoldcf.core.interfaces.SpecificationNode;
+import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
+import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
+import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
+import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
+import org.apache.manifoldcf.crawler.system.Logging;
 
 public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnector {
 
@@ -104,6 +109,9 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    * The root node for the Alfresco connector configuration in ManifoldCF
    */
   private static final String JOB_STARTPOINT_NODE_TYPE = "startpoint";
+  
+  /** Read activity */
+  protected final static String ACTIVITY_READ = "read document";
 
   private static AlfrescoIndexTracker alfrescoTracker;
 
@@ -154,6 +162,8 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     }
   }
 
+  
+  
   /**
    * Process a set of documents.
    * This is the method that should cause each document to be fetched, processed, and the results either added
@@ -176,12 +186,19 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
 
     Logging.connectors.debug("Alfresco: Inside processDocuments");
     int i = 0;
-
     while (i < documentIdentifiers.length) {
+      long startTime = System.currentTimeMillis();
       Long nodeId = Long.valueOf(documentIdentifiers[i]);
       Pair<RepositoryDocument, String> rd = alfrescoTracker.processMetaData(nodeId);
-      String documentURI = nodeId + "|" + rd.getSecond();
-      activities.ingestDocument(String.valueOf(nodeId), rd.getSecond(), documentURI, rd.getFirst());
+      String documentURI = StringUtils.EMPTY;
+      if(rd!=null){
+        documentURI = nodeId + "|" + rd.getSecond();
+        activities.ingestDocument(String.valueOf(nodeId), rd.getSecond(), documentURI, rd.getFirst());
+      }
+      
+//      activities.recordActivity(new Long(startTime), ACTIVITY_READ,
+//          fileLength, nodeId, errorCode, errorDesc, null);
+      
       i++;
     }
   }
@@ -206,7 +223,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       ServiceInterruption {
     return alfrescoTracker.getDocumentVersions(documentIdentifiers, spec);
   }
-
+  
   /**
    * Connect.
    *
@@ -224,7 +241,7 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
     port = params.getParameter(AlfrescoConfig.PORT_PARAM);
     path = params.getParameter(AlfrescoConfig.PATH_PARAM);
     alfrescoTracker = new AlfrescoIndexTracker(".", username, password, protocol, server, port, path);
-    alfrescoTracker.init();
+    
   }
 
   /**
@@ -247,7 +264,12 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
    */
   @Override
   public String check() throws ManifoldCFException {
-    return super.check();
+    try {
+      getSession();
+      return super.check();
+    } catch (ManifoldCFException e) {
+      return "Connection failed: " + e.getMessage();
+    }
   }
 
   /**
@@ -312,7 +334,12 @@ public class AlfrescoWebScriptsRepositoryConnector extends BaseRepositoryConnect
       if (StringUtils.isEmpty(path))
         throw new ManifoldCFException("Parameter " + AlfrescoConfig.PATH_PARAM
             + " required but not set");
+
     }
+    
+    alfrescoTracker.init();
+    
+    
   }
 
   /**
