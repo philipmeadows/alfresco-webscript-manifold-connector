@@ -68,4 +68,42 @@
     </repository>
   </repositories>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.alfresco</groupId>
+      <artifactId>alfresco-solr-integration</artifactId>
+      <version>${alfresco.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.alfresco</groupId>
+      <artifactId>alfresco-core</artifactId>
+      <version>${alfresco.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mcf-core</artifactId>
+      <version>${manifold.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mcf-agents</artifactId>
+      <version>${manifold.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mcf-pull-agent</artifactId>
+      <version>${manifold.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>mcf-ui-core</artifactId>
+      <version>${manifold.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
 </project>
