@@ -83,12 +83,12 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.alfresco</groupId>
+      <groupId>${alfresco.groupId}</groupId>
       <artifactId>alfresco-solr-integration</artifactId>
       <version>${alfresco.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.alfresco</groupId>
+      <groupId>${alfresco.groupId}</groupId>
       <artifactId>alfresco-core</artifactId>
       <version>${alfresco.version}</version>
     </dependency>
