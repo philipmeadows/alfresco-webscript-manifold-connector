@@ -38,6 +38,7 @@
 
   <properties>
     <manifold.version>1.1.1</manifold.version>
+    <alfresco.groupId>org.alfresco</alfresco.groupId>
     <alfresco.version>4.2.c</alfresco.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -63,9 +64,21 @@
       <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
     </repository>
     <repository>
+        <id>alfresco-artifacts-snapshots</id>
+        <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
+    </repository>
+    <repository>
       <id>local-repo-manifold-jars</id>
       <url>file://${project.basedir}/maven-repo</url>
     </repository>
+    
+    <!-- The repository below is dedicated to build the connector against Alfresco Enterprise -->
+     
+    <repository>
+      <id>alfresco-private-repository</id>
+      <url>https://artifacts.alfresco.com/nexus/content/groups/private</url>
+    </repository>
+   
   </repositories>
 
   <dependencies>
