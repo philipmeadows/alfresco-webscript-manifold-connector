@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="alfresco.index">
+  <resultMap id="result_NodeIndex" type="NodeIndex">
+    <id property="id" column="id" jdbcType="BIGINT" javaType="java.lang.Long"/>
+    <result property="uuid" column="uuid" jdbcType="VARCHAR" javaType="java.lang.String"/>
+    <result property="version" column="version" jdbcType="BIGINT" javaType="java.lang.Long"/>
+    <result property="typeName" column="type_name" jdbcType="VARCHAR" javaType="java.lang.String"/>
+    <result property="typeNamespace" column="type_namespace" jdbcType="VARCHAR" javaType="java.lang.String"/>
+    <result property="aclChangesetId" column="acl_changeset_id" jdbcType="BIGINT" javaType="java.lang.Long"/>
+    <result property="transactionId" column="txn_id" jdbcType="BIGINT" javaType="java.lang.Long"/>
+  </resultMap>
+
+  <select id="select_NodeIndexesByAclChangesetId" parameterType="NodeIndexLoad" resultMap="result_NodeIndex">
+    select
+    node.id             as id,
+    node.uuid           as uuid,
+    node.version        as version,
+    qname.local_name    as type_name,
+    ns.uri              as type_namespace,
+    acl.acl_change_set  as acl_changeset_id
+    from
+    alf_node node
+    left outer join
+    alf_access_control_list acl
+    on
+    node.acl_id = acl.id
+    left outer join
+    alf_qname qname
+    on
+    node.type_qname_id = qname.id
+    left outer join
+    alf_namespace ns
+    on
+    qname.ns_id = ns.id
+    where
+    <if test="allowedTypes != null">
+      concat('{', ns.uri, '}', qname.local_name) in
+      <foreach item="item" index="index" collection="allowedTypes" open="(" separator="," close=")">
+        #{item}
+      </foreach> and
+    </if>
+    node.store_id = #{storeId} and
+    acl.acl_change_set &gt; #{minId} and
+    acl.acl_change_set &lt;= #{maxId}
+    order by
+    acl.acl_change_set ASC
+  </select>
+
+  <select id="select_NodeIndexesByTransactionId" parameterType="NodeIndexLoad" resultMap="result_NodeIndex">
+    select
+    node.id             as id,
+    node.uuid           as uuid,
+    node.version        as version,
+    qname.local_name    as type_name,
+    ns.uri              as type_namespace,
+    node.transaction_id as txn_id
+    from
+    alf_node node
+    left outer join
+    alf_qname qname
+    on
+    node.type_qname_id = qname.id
+    left outer join
+    alf_namespace ns
+    on
+    qname.ns_id = ns.id
+    where
+    <if test="allowedTypes != null">
+      concat('{', ns.uri, '}', qname.local_name) in
+      <foreach item="item" index="index" collection="allowedTypes" open="(" separator="," close=")">
+        #{item}
+      </foreach> and
+    </if>
+    node.transaction_id &gt; #{minId} and
+    node.transaction_id &lt;= #{maxId}
+    order by
+    node.transaction_id ASC
+  </select>
+</mapper>
