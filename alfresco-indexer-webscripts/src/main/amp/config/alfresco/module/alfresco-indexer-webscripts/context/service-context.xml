@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE beans PUBLIC '-//SPRING//DTD BEAN//EN' 'http://www.springframework.org/dtd/spring-beans.dtd'>
+
+<beans>
+
+  <!--<bean id="indexingRepoSqlSessionFactory" class="org.alfresco.ibatis.HierarchicalSqlSessionFactoryBean">-->
+    <!--<property name="useLocalCaches" value="${mybatis.useLocalCaches}"/>-->
+    <!--<property name="resourceLoader" ref="dialectResourceLoader"/>-->
+    <!--<property name="dataSource" ref="dataSource"/>-->
+    <!--<property name="configLocation">-->
+      <!--<value>classpath:alfresco/ibatis/indexing-SqlMapConfig.xml</value>-->
+    <!--</property>-->
+  <!--</bean>-->
+
+  <!-- MyBatis config for Alfresco (using common datasource) -->
+  <bean id="indexingSqlSessionFactory" class="org.alfresco.ibatis.HierarchicalSqlSessionFactoryBean">
+    <property name="useLocalCaches" value="${mybatis.useLocalCaches}"/>
+    <property name="resourceLoader" ref="dialectResourceLoader"/>
+    <property name="dataSource" ref="dataSource"/>
+    <property name="configLocation">
+      <value>classpath:alfresco/ibatis/alfresco-indexing-SqlMapConfig.xml</value>
+    </property>
+  </bean>
+
+  <bean id="indexingSqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+    <constructor-arg index="0" ref="indexingSqlSessionFactory"/>
+  </bean>
+
+  <bean id="indexingService"
+        class="org.alfresco.consulting.indexer.dao.IndexingDaoImpl">
+    <property name="sqlSessionTemplate" ref="indexingSqlSessionTemplate"/>
+    <property name="allowedTypes">
+      <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
+        <constructor-arg type="java.lang.String" value="${indexer.changes.allowedTypes}"/>
+      </bean>
+    </property>
+  </bean>
+
+  <bean id="webscript.org.alfresco.consulting.indexer.webscripts.changes.get"
+        class="org.alfresco.consulting.indexer.webscripts.NodeChangesWebScript"
+        parent="webscript">
+    <property name="namespaceService" ref="NamespaceService"/>
+    <property name="qnameDao" ref="qnameDAO"/>
+    <property name="indexingService" ref="indexingService"/>
+    <property name="nodeDao" ref="nodeDAO"/>
+    <property name="propertiesUrlTemplate" value="${indexer.properties.url.template}"/>
+    <property name="maxNodesPerAcl" value="${indexer.changes.nodesperacl}"/>
+    <property name="maxNodesPerTxns" value="${indexer.changes.nodespertxn}"/>
+  </bean>
+
+  <bean id="webscript.org.alfresco.consulting.indexer.webscripts.details.get"
+        class="org.alfresco.consulting.indexer.webscripts.NodeDetailsWebScript"
+        parent="webscript">
+    <property name="dictionaryService" ref="DictionaryService"/>
+    <property name="namespaceService" ref="NamespaceService"/>
+    <property name="nodeService" ref="NodeService"/>
+    <property name="nodeDao" ref="nodeDAO"/>
+    <property name="aclDao" ref="aclDAO"/>
+    <property name="contentUrlPrefix" value="${indexer.content.url.prefix}"/>
+    <property name="shareUrlPrefix" value="${indexer.share.url.prefix}"/>
+  </bean>
+
+  <bean id="webscript.org.alfresco.consulting.indexer.webscripts.authresolve.get"
+        class="org.alfresco.consulting.indexer.webscripts.AuthorityResolverWebScript"
+        parent="webscript">
+    <property name="authorityService" ref="AuthorityService"/>
+    <property name="personService" ref="PersonService"/>
+  </bean>
+
+</beans>

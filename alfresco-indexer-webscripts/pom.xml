@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>alfresco-indexer-webscripts</artifactId>
+    <packaging>amp</packaging>
+
+    <parent>
+      <groupId>org.alfresco.consulting.indexer</groupId>
+      <artifactId>alfresco-indexer-parent</artifactId>
+      <version>0.5.3-SNAPSHOT</version>
+    </parent>
+
+    <properties>
+      <!-- Defines the alfresco edition to compile against. Allowed values are [org.alfresco|org.alfresco.enterprise]-->
+      <alfresco.groupId>org.alfresco.enterprise</alfresco.groupId>
+      <!-- Defines the alfresco version to compile against -->
+      <alfresco.version>4.1.4</alfresco.version>
+      <app.log.root.level>WARN</app.log.root.level>
+      <alfresco.data.location>alf_data_dev</alfresco.data.location>
+      <env>local</env>
+    </properties>
+
+    <profiles>
+      <profile>
+        <id>mao</id>
+        <properties>
+          <alfresco.db.datasource.class>org.gjt.mm.mysql.Driver</alfresco.db.datasource.class>
+          <alfresco.db.url>jdbc:mysql://localhost:3306/alfresco</alfresco.db.url>
+          <alfresco.db.username>root</alfresco.db.username>
+          <alfresco.db.password />
+        </properties>
+        <dependencies>
+          <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.26</version>
+          </dependency>
+        </dependencies>
+      </profile>
+    </profiles>
+
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>${alfresco.groupId}</groupId>
+          <artifactId>alfresco-platform-distribution</artifactId>
+          <version>${alfresco.version}</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>${alfresco.groupId}</groupId>
+            <artifactId>alfresco-repository</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>${alfresco.groupId}</groupId>
+          <artifactId>alfresco-remote-api</artifactId>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>${alfresco.groupId}</groupId>
+          <artifactId>alfresco-remote-api</artifactId>
+          <scope>provided</scope>
+          <classifier>config</classifier>
+        </dependency>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.springframework.extensions.surf</groupId>
+          <artifactId>spring-webscripts</artifactId>
+          <version>1.2.0-M4</version>
+          <scope>test</scope>
+          <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.chemistry</groupId>
+          <artifactId>chemistry-tck-atompub</artifactId>
+          <!--<version>0.1-0.62-SNAPSHOT</version>-->
+          <version>0.1-incubating-unreleased</version>
+          <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>maven-jetty-plugin</artifactId>
+          <configuration>
+            <jettyConfig>${project.build.directory}/jetty.xml</jettyConfig>
+            <contextPath>/alfresco</contextPath>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>commons-dbcp</groupId>
+              <artifactId>commons-dbcp</artifactId>
+              <version>1.2</version>
+            </dependency>
+            <dependency>
+              <groupId>mysql</groupId>
+              <artifactId>mysql-connector-java</artifactId>
+              <version>5.1.26</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+      </plugins>
+    </build>
+</project>

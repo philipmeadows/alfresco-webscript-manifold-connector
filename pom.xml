@@ -1,122 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
- Licensed to the Apache Software Foundation (ASF) under one or more
- contributor license agreements.  See the NOTICE file distributed with
- this work for additional information regarding copyright ownership.
- The ASF licenses this file to You under the Apache License, Version 2.0
- (the "License"); you may not use this file except in compliance with
- the License.  You may obtain a copy of the License at
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.alfresco.consulting.indexer</groupId>
+    <artifactId>alfresco-indexer-parent</artifactId>
+    <version>0.5.3-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-     http://www.apache.org/licenses/LICENSE-2.0
+    <parent>
+      <groupId>org.alfresco.maven</groupId>
+      <artifactId>alfresco-sdk-parent</artifactId>
+      <version>1.0.2</version>
+    </parent>
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
--->
+    <modules>
+      <module>alfresco-indexer-webscripts</module>
+      <module>alfresco-indexer-client</module>
+      <module>manifold-connector</module>
+    </modules>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>org.apache.manifoldcf</groupId>
-  <artifactId>mcf-alfresco-webscript-connector-parent</artifactId>
-  <version>1.1.1</version>
-  <packaging>pom</packaging>
-  <description>Manifold Connector for Alfresco using Solr Webscripts - Parent POM</description>
-  <name>Alfresco Webscript Connector Parent POM</name>
+    <scm>
+      <connection>scm:git:git@github.com:maoo/alfresco-hydra.git</connection>
+      <url>scm:git:git@github.com:maoo/alfresco-hydra.git</url>
+      <developerConnection>scm:git:git@github.com:maoo/alfresco-hydra.git</developerConnection>
+      <tag>HEAD</tag>
+    </scm>
 
-  <parent>
-    <groupId>org.alfresco.maven</groupId>
-    <artifactId>alfresco-sdk-parent</artifactId>
-    <version>1.0.1</version>
-  </parent>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.0</version>
+          <configuration>
+            <source>1.6</source>
+            <target>1.6</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.4.2</version>
+          <configuration>
+            <arguments>-Ppurge</arguments>
+            <goals>deploy</goals>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
 
-  <modules>
-    <module>mcf-alfresco-webscript-connector</module>
-    <module>alfresco-instance</module>
-  </modules>
+    <distributionManagement>
+        <repository>
+          <id>alfresco-indexer-release</id>
+          <url>dav:https://repository-maoo.forge.cloudbees.com/release/</url>
+        </repository>
+        <snapshotRepository>
+          <id>alfresco-indexer-snapshot</id>
+          <url>dav:https://repository-maoo.forge.cloudbees.com/snapshot/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
-  <properties>
-    <manifold.version>1.1.1</manifold.version>
-    <alfresco.groupId>org.alfresco</alfresco.groupId>
-    <alfresco.version>4.2.c</alfresco.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-
-  <developers>
-    <developer>
-      <name>Piergiorgio Lucidi</name>
-      <organization>Sourcesense</organization>
-      <organizationUrl>http://www.sourcesense.com</organizationUrl>
-      <url>http://www.open4dev.com</url>
-    </developer>
-    <developer>
-      <name>Maurizio Pillitu</name>
-      <organization>Alfresco</organization>
-      <organizationUrl>http://www.alfresco.com</organizationUrl>
-      <url>http://about.me/maoo</url>
-    </developer>
-  </developers>
-
-  <repositories>
-    <repository>
-      <id>alfresco-public</id>
-      <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
-    </repository>
-    <repository>
-        <id>alfresco-artifacts-snapshots</id>
+    <repositories>
+      <repository>
+        <id>alfresco-private</id>
+        <url>https://artifacts.alfresco.com/nexus/content/groups/private</url>
+      </repository>
+      <repository>
+        <id>alfresco-public-snapshots</id>
         <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
-    </repository>
-    <repository>
-      <id>local-repo-manifold-jars</id>
-      <url>file://${project.basedir}/maven-repo</url>
-    </repository>
-    
-    <!-- The repository below is dedicated to build the connector against Alfresco Enterprise -->
-     
-    <repository>
-      <id>alfresco-private-repository</id>
-      <url>https://artifacts.alfresco.com/nexus/content/groups/private</url>
-    </repository>
-   
-  </repositories>
-
-  <dependencies>
-    <dependency>
-      <groupId>${alfresco.groupId}</groupId>
-      <artifactId>alfresco-solr-integration</artifactId>
-      <version>${alfresco.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${alfresco.groupId}</groupId>
-      <artifactId>alfresco-core</artifactId>
-      <version>${alfresco.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-core</artifactId>
-      <version>${manifold.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-agents</artifactId>
-      <version>${manifold.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-pull-agent</artifactId>
-      <version>${manifold.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>mcf-ui-core</artifactId>
-      <version>${manifold.version}</version>
-      <scope>provided</scope>
-    </dependency>
-  </dependencies>
+        <snapshots>
+          <enabled>true</enabled>
+          <updatePolicy>daily</updatePolicy>
+        </snapshots>
+      </repository>
+    </repositories>
 
 </project>
