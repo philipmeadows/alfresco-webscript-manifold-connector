@@ -31,7 +31,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final String[] activitiesList = new String[]{ACTIVITY_FETCH};
   private AlfrescoClient alfrescoClient;
   private final Gson gson = new Gson();
-  private Boolean enableDocumentProcessing;
+  private Boolean enableDocumentProcessing = Boolean.TRUE;
 
   @Override
   public int getConnectorModel() {
@@ -72,7 +72,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     String storeId = getConfig(config, "storeid", "SpacesStore");
     String username = getConfig(config, "username", null);
     String password = getConfig(config, "password", null);
-    this.enableDocumentProcessing = new Boolean(getConfig(config, "enableDocumentProcessing", "true"));
+    this.enableDocumentProcessing = new Boolean(getConfig(config, "enabledocumentprocessing", "true"));
 
     alfrescoClient = new WebScriptsAlfrescoClient(protocol, hostname, endpoint,
             storeProtocol, storeId, username, password);

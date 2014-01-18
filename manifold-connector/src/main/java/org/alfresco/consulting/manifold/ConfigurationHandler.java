@@ -23,6 +23,7 @@ public class ConfigurationHandler {
   private static final String PARAM_HOSTNAME = "hostname";
   private static final String PARAM_ENDPOINT = "endpoint";
   private static final String PARAM_STORE_PROTOCOL = "storeprotocol";
+  private static final String PARAM_ENABLE_DOCUMENT_PROCESSING = "enabledocumentprocessing";
   private static final String PARAM_STORE_ID = "storeid";
   private static final String PARAM_USERNAME = "username";
   private static final String PARAM_PASSWORD = "password";
@@ -37,6 +38,7 @@ public class ConfigurationHandler {
     DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_HOSTNAME, "localhost");
     DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_ENDPOINT, "/alfresco/service");
     DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_STORE_PROTOCOL, "workspace");
+    DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_ENABLE_DOCUMENT_PROCESSING,"true");
     DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_STORE_ID, "SpacesStore");
     DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_USERNAME, "");
     DEFAULT_CONFIGURATION_PARAMETERS.put(PARAM_PASSWORD, "");
