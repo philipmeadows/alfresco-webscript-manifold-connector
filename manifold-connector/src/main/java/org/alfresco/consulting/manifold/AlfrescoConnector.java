@@ -5,6 +5,8 @@ import org.alfresco.consulting.indexer.client.AlfrescoClient;
 import org.alfresco.consulting.indexer.client.AlfrescoDownException;
 import org.alfresco.consulting.indexer.client.AlfrescoResponse;
 import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
+import org.alfresco.util.Pair;
+import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.core.interfaces.*;
@@ -29,6 +31,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final String[] activitiesList = new String[]{ACTIVITY_FETCH};
   private AlfrescoClient alfrescoClient;
   private final Gson gson = new Gson();
+  private Boolean enableDocumentProcessing;
 
   @Override
   public int getConnectorModel() {
@@ -69,6 +72,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     String storeId = getConfig(config, "storeid", "SpacesStore");
     String username = getConfig(config, "username", null);
     String password = getConfig(config, "password", null);
+    this.enableDocumentProcessing = new Boolean(getConfig(config, "enableDocumentProcessing", "true"));
 
     alfrescoClient = new WebScriptsAlfrescoClient(protocol, hostname, endpoint,
             storeProtocol, storeId, username, password);
@@ -169,8 +173,19 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
       if ((Boolean) map.get("deleted")) {
         activities.deleteDocument(uuid);
       } else {
-        activities.ingestDocument(uuid, "", uuid, rd);
+        if (this.enableDocumentProcessing) {
+          processMetaData(rd,uuid);
+        }
+        activities.ingestDocument(String.valueOf(uuid), "", uuid, rd);
       }
+    }
+  }
+
+  private void processMetaData(RepositoryDocument rd, String uuid) throws ManifoldCFException {
+    Map<String,Object> properties = alfrescoClient.fetchMetadata(uuid);
+    for(String property : properties.keySet()) {
+      Object propertyValue = properties.get(property);
+      rd.addField(property,propertyValue.toString());
     }
   }
 
