@@ -4,19 +4,18 @@ import com.google.gson.Gson;
 import org.alfresco.consulting.indexer.client.AlfrescoClient;
 import org.alfresco.consulting.indexer.client.AlfrescoResponse;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
+import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
 import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
 import org.apache.manifoldcf.crawler.system.SeedingActivity;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -92,13 +91,21 @@ public class AlfrescoConnectorTest {
   public void whenProcessingDocumentsNodeRefsAreUsedAsDocumentURI() throws Exception {
     TestDocument testDocument = new TestDocument();
     String json = gson.toJson(testDocument);
-
     IProcessActivity activities = mock(IProcessActivity.class);
     connector.processDocuments(new String[]{json}, null, activities, null, null, 0);
 
+    ArgumentCaptor<RepositoryDocument> argument = ArgumentCaptor.forClass(RepositoryDocument.class);
     verify(activities)
             .ingestDocument(eq(TestDocument.uuid), anyString(),
-                    eq(TestDocument.uuid), any(RepositoryDocument.class));
+                    eq(TestDocument.uuid), argument.capture());
+
+    Iterator<String> i = argument.getValue().getFields();
+    while(i.hasNext()) {
+      String fieldName = i.next();
+      Object value1 = argument.getValue().getField(fieldName)[0];
+      Object value2 = testDocument.getRepositoryDocument().getField(fieldName)[0];
+      assert value1.equals(value2);
+    }
   }
 
   @Test
@@ -135,6 +142,15 @@ public class AlfrescoConnectorTest {
 
     public void setDeleted(boolean deleted) {
       put("deleted", deleted);
+    }
+
+    public RepositoryDocument getRepositoryDocument() throws ManifoldCFException {
+      RepositoryDocument rd = new RepositoryDocument();
+      rd.setFileName(uuid);
+      for(String property : keySet()) {
+        rd.addField(property,get(property).toString());
+      }
+      return rd;
     }
   }
 }
