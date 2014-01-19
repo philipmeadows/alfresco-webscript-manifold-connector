@@ -94,15 +94,15 @@ public class AlfrescoConnectorTest {
     IProcessActivity activities = mock(IProcessActivity.class);
     connector.processDocuments(new String[]{json}, null, activities, null, null, 0);
 
-    ArgumentCaptor<RepositoryDocument> argument = ArgumentCaptor.forClass(RepositoryDocument.class);
+    ArgumentCaptor<RepositoryDocument> rd = ArgumentCaptor.forClass(RepositoryDocument.class);
     verify(activities)
             .ingestDocument(eq(TestDocument.uuid), anyString(),
-                    eq(TestDocument.uuid), argument.capture());
+                    eq(TestDocument.uuid), rd.capture());
 
-    Iterator<String> i = argument.getValue().getFields();
+    Iterator<String> i = rd.getValue().getFields();
     while(i.hasNext()) {
       String fieldName = i.next();
-      Object value1 = argument.getValue().getField(fieldName)[0];
+      Object value1 = rd.getValue().getField(fieldName)[0];
       Object value2 = testDocument.getRepositoryDocument().getField(fieldName)[0];
       assert value1.equals(value2);
     }
