@@ -9,6 +9,7 @@ import org.alfresco.repo.domain.node.NodeDAO;
 import org.alfresco.repo.domain.qname.QNameDAO;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.namespace.NamespaceService;
+import org.alfresco.util.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.extensions.webscripts.*;
@@ -58,7 +59,7 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
         "storeProtocol: %s\n", lastTxnId, lastAclChangesetId, storeId, storeProtocol));
 
     //Getting the Store ID on which the changes are requested
-    Long storeLongId = nodeDao.getStore(new StoreRef(storeProtocol, storeId)).getFirst();
+    Pair<Long,StoreRef> store = nodeDao.getStore(new StoreRef(storeProtocol, storeId));
 
     Set<NodeEntity> nodes = new HashSet<NodeEntity>();
     //Updating the last IDs being processed
@@ -66,7 +67,7 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     if (lastTxnId == null) {
       lastTxnId = new Long(0);
     }
-    List<NodeEntity> nodesFromTxns = indexingService.getNodesByTransactionId(storeLongId, lastTxnId, maxTxns);
+    List<NodeEntity> nodesFromTxns = indexingService.getNodesByTransactionId(store, lastTxnId, maxTxns);
     if (nodesFromTxns != null && nodesFromTxns.size() > 0) {
       nodes.addAll(nodesFromTxns);
       lastTxnId = nodesFromTxns.get(nodesFromTxns.size()-1).getTransactionId();
@@ -75,7 +76,7 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     if (lastAclChangesetId == null) {
       lastAclChangesetId = new Long(0);
     }
-    List<NodeEntity> nodesFromAcls = indexingService.getNodesByAclChangesetId(storeLongId, lastAclChangesetId, maxAclChangesets);
+    List<NodeEntity> nodesFromAcls = indexingService.getNodesByAclChangesetId(store, lastAclChangesetId, maxAclChangesets);
     if (nodesFromAcls != null && nodesFromAcls.size() > 0) {
       nodes.addAll(nodesFromAcls);
       lastAclChangesetId = nodesFromAcls.get(nodesFromAcls.size()-1).getAclChangesetId();

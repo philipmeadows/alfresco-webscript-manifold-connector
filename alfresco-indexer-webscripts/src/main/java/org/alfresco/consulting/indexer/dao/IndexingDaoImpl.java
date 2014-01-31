@@ -2,6 +2,8 @@ package org.alfresco.consulting.indexer.dao;
 
 import org.alfresco.consulting.indexer.entities.NodeBatchLoadEntity;
 import org.alfresco.consulting.indexer.entities.NodeEntity;
+import org.alfresco.service.cmr.repository.StoreRef;
+import org.alfresco.util.Pair;
 import org.apache.ibatis.session.RowBounds;
 import org.mybatis.spring.SqlSessionTemplate;
 
@@ -13,13 +15,16 @@ public class IndexingDaoImpl {
   private static final String SELECT_NODES_BY_ACLS = "alfresco.index.select_NodeIndexesByAclChangesetId";
   private static final String SELECT_NODES_BY_TXNS = "alfresco.index.select_NodeIndexesByTransactionId";
 
-  public List<NodeEntity> getNodesByAclChangesetId(Long storeId, Long lastAclChangesetId, int maxResults) {
+  public List<NodeEntity> getNodesByAclChangesetId(Pair<Long, StoreRef> store, Long lastAclChangesetId, int maxResults) {
+    StoreRef storeRef = store.getSecond();
     if (maxResults <= 0 || maxResults == Integer.MAX_VALUE) {
       throw new IllegalArgumentException("Maximum results must be a reasonable number.");
     }
 
     NodeBatchLoadEntity nodeLoadEntity = new NodeBatchLoadEntity();
-    nodeLoadEntity.setStoreId(storeId);
+    nodeLoadEntity.setStoreId(store.getFirst());
+    nodeLoadEntity.setStoreProtocol(storeRef.getProtocol());
+    nodeLoadEntity.setStoreIdentifier(storeRef.getIdentifier());
     nodeLoadEntity.setMinId(lastAclChangesetId);
     nodeLoadEntity.setMaxId(lastAclChangesetId+maxResults);
     nodeLoadEntity.setAllowedTypes(this.allowedTypes);
@@ -27,13 +32,16 @@ public class IndexingDaoImpl {
     return (List<NodeEntity>) template.selectList(SELECT_NODES_BY_ACLS, nodeLoadEntity, new RowBounds(0, Integer.MAX_VALUE));
   }
 
-  public List<NodeEntity> getNodesByTransactionId(Long storeId, Long lastTransactionId, int maxResults) {
+  public List<NodeEntity> getNodesByTransactionId(Pair<Long, StoreRef> store, Long lastTransactionId, int maxResults) {
+    StoreRef storeRef = store.getSecond();
     if (maxResults <= 0 || maxResults == Integer.MAX_VALUE) {
       throw new IllegalArgumentException("Maximum results must be a reasonable number.");
     }
 
     NodeBatchLoadEntity nodeLoadEntity = new NodeBatchLoadEntity();
-    nodeLoadEntity.setStoreId(storeId);
+    nodeLoadEntity.setStoreId(store.getFirst());
+    nodeLoadEntity.setStoreProtocol(storeRef.getProtocol());
+    nodeLoadEntity.setStoreIdentifier(storeRef.getIdentifier());
     nodeLoadEntity.setMinId(lastTransactionId);
     nodeLoadEntity.setMaxId(lastTransactionId+maxResults);
     nodeLoadEntity.setAllowedTypes(this.allowedTypes);

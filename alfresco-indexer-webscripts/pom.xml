@@ -11,10 +11,11 @@
     </parent>
 
     <properties>
-      <!-- Defines the alfresco edition to compile against. Allowed values are [org.alfresco|org.alfresco.enterprise]-->
-      <alfresco.groupId>org.alfresco.enterprise</alfresco.groupId>
-      <!-- Defines the alfresco version to compile against -->
-      <alfresco.version>4.1.4</alfresco.version>
+      <!-- Switch between Community (default) and enterprise Alfresco editions -->
+      <!--<alfresco.groupId>org.alfresco.enterprise</alfresco.groupId>-->
+      <!--<alfresco.version>4.1.4</alfresco.version>-->
+      <alfresco.groupId>org.alfresco</alfresco.groupId>
+      <alfresco.version>4.2.c</alfresco.version>
       <app.log.root.level>WARN</app.log.root.level>
       <alfresco.data.location>alf_data_dev</alfresco.data.location>
       <env>local</env>
@@ -81,10 +82,18 @@
           <scope>test</scope>
           <classifier>tests</classifier>
         </dependency>
+        <!-- Used as of 4.2.e onwards for testing purposes -->
+        <!-- @TODO - With 4.2.d,4.2.e,4.2.0 tests fail with "java.sql.SQLException: Data source is closed" -->
+        <!--<dependency>-->
+          <!--<groupId>${alfresco.groupId}</groupId>-->
+          <!--<artifactId>alfresco-remote-api</artifactId>-->
+          <!--<version>${alfresco.version}</version>-->
+          <!--<scope>provided</scope>-->
+          <!--<classifier>tests</classifier>-->
+        <!--</dependency>-->
         <dependency>
           <groupId>org.apache.chemistry</groupId>
           <artifactId>chemistry-tck-atompub</artifactId>
-          <!--<version>0.1-0.62-SNAPSHOT</version>-->
           <version>0.1-incubating-unreleased</version>
           <scope>test</scope>
         </dependency>

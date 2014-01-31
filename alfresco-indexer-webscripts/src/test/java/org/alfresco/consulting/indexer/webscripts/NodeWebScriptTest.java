@@ -37,6 +37,7 @@ public class NodeWebScriptTest extends BaseWebScriptTest {
     nodeService = (NodeService) applicationContext.getBean("nodeService");
     namespaceService = (NamespaceService) applicationContext.getBean("namespaceService");
     AuthenticationUtil.setFullyAuthenticatedUser(ADMIN_USER_NAME);
+    setDefaultRunAs("admin");
   }
 
   @Test

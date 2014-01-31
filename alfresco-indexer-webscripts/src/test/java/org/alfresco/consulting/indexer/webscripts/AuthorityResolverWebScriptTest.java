@@ -1,6 +1,5 @@
 package org.alfresco.consulting.indexer.webscripts;
 
-import org.alfresco.repo.security.authentication.AuthenticationComponent;
 import org.alfresco.repo.web.scripts.BaseWebScriptTest;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.namespace.NamespaceService;
@@ -33,6 +32,7 @@ public class AuthorityResolverWebScriptTest extends BaseWebScriptTest {
 
   @Test
   public void testAuth() throws Exception {
+    setDefaultRunAs("admin");
     Response response = sendRequest(new TestWebScriptServer.GetRequest("/auth/resolve/admin"),200);
     JSONArray resultList = new JSONArray(response.getContentAsString());
     assertAdminAuthResolve(resultList);
@@ -42,9 +42,7 @@ public class AuthorityResolverWebScriptTest extends BaseWebScriptTest {
     assertAdminAuthResolve(resultList);
   }
 
-  public void assertAdminAuthResolve(JSONArray resultList) throws Exception {
-    System.out.println(resultList);
-
+  private void assertAdminAuthResolve(JSONArray resultList) throws Exception {
     for(int j=0; j < resultList.length()-1; j++) {
       JSONObject result = resultList.getJSONObject(j);
       String username = result.get("username").toString();

@@ -7,6 +7,9 @@
     <id property="id" column="id" jdbcType="BIGINT" javaType="java.lang.Long"/>
     <result property="uuid" column="uuid" jdbcType="VARCHAR" javaType="java.lang.String"/>
     <result property="version" column="version" jdbcType="BIGINT" javaType="java.lang.Long"/>
+    <result property="store.id" column="store_id" jdbcType="BIGINT" javaType="java.lang.Long"/>
+    <result property="store.protocol" column="protocol" jdbcType="VARCHAR" javaType="java.lang.String"/>
+    <result property="store.identifier" column="identifier" jdbcType="VARCHAR" javaType="java.lang.String"/>
     <result property="typeName" column="type_name" jdbcType="VARCHAR" javaType="java.lang.String"/>
     <result property="typeNamespace" column="type_namespace" jdbcType="VARCHAR" javaType="java.lang.String"/>
     <result property="aclChangesetId" column="acl_changeset_id" jdbcType="BIGINT" javaType="java.lang.Long"/>
@@ -15,26 +18,19 @@
 
   <select id="select_NodeIndexesByAclChangesetId" parameterType="NodeIndexLoad" resultMap="result_NodeIndex">
     select
-    node.id             as id,
-    node.uuid           as uuid,
-    node.version        as version,
-    qname.local_name    as type_name,
-    ns.uri              as type_namespace,
-    acl.acl_change_set  as acl_changeset_id
-    from
-    alf_node node
-    left outer join
-    alf_access_control_list acl
-    on
-    node.acl_id = acl.id
-    left outer join
-    alf_qname qname
-    on
-    node.type_qname_id = qname.id
-    left outer join
-    alf_namespace ns
-    on
-    qname.ns_id = ns.id
+    node.id                 as id,
+    node.uuid               as uuid,
+    node.version            as version,
+    node.store_id           as store_id,
+    'workspace'             as protocol,
+    'SpacesStore'           as identifier,
+    qname.local_name        as type_name,
+    ns.uri                  as type_namespace,
+    acl.acl_change_set      as acl_changeset_id
+    from alf_node node
+    left outer join alf_access_control_list acl on node.acl_id = acl.id
+    left outer join alf_qname qname on node.type_qname_id = qname.id
+    left outer join alf_namespace ns on qname.ns_id = ns.id
     where
     <if test="allowedTypes != null">
       ('{' || ns.uri || '}' || qname.local_name) in
@@ -49,24 +45,25 @@
     acl.acl_change_set ASC
   </select>
 
+  <!--"#{storeId}"            as store_id,-->
+  <!--"#{storeProtocol}"      as protocol,-->
+  <!--"#{storeIdentifier}"    as identifier,-->
+
+
   <select id="select_NodeIndexesByTransactionId" parameterType="NodeIndexLoad" resultMap="result_NodeIndex">
     select
-    node.id             as id,
-    node.uuid           as uuid,
-    node.version        as version,
-    qname.local_name    as type_name,
-    ns.uri              as type_namespace,
-    node.transaction_id as txn_id
-    from
-    alf_node node
-    left outer join
-    alf_qname qname
-    on
-    node.type_qname_id = qname.id
-    left outer join
-    alf_namespace ns
-    on
-    qname.ns_id = ns.id
+    node.id                 as id,
+    node.uuid               as uuid,
+    node.version            as version,
+    node.store_id           as store_id,
+    'workspace'             as protocol,
+    'SpacesStore'           as identifier,
+    qname.local_name        as type_name,
+    ns.uri                  as type_namespace,
+    node.transaction_id     as txn_id
+    from alf_node node
+    left outer join alf_qname qname on node.type_qname_id = qname.id
+    left outer join alf_namespace ns on qname.ns_id = ns.id
     where
     <if test="allowedTypes != null">
       ('{' || ns.uri || '}' || qname.local_name) in
