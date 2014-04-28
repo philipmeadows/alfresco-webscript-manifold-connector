@@ -55,7 +55,7 @@
         </repository>
         <snapshotRepository>
           <id>alfresco-indexer-snapshot</id>
-          <url>dav:https://repository-maoo.forge.cloudbees.com/snapshot/</url>
+          <url>dav:https://repository-maoo.forge.cloudbees.com/release/</url>
         </snapshotRepository>
     </distributionManagement>
 
