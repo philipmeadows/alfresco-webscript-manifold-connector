@@ -60,6 +60,10 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
 
     //Getting the Store ID on which the changes are requested
     Pair<Long,StoreRef> store = nodeDao.getStore(new StoreRef(storeProtocol, storeId));
+    if(store == null)
+    {
+        throw new IllegalArgumentException("Invalid store reference: " + storeProtocol + "://" + storeId);
+    }
 
     Set<NodeEntity> nodes = new HashSet<NodeEntity>();
     //Updating the last IDs being processed
