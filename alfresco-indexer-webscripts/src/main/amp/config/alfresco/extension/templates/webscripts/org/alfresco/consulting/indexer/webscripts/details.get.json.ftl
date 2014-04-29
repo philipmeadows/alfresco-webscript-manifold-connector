@@ -13,6 +13,13 @@
   <#if contentUrlPath??>
     "contentUrlPath" : "${contentUrlPrefix + contentUrlPath}",
   </#if>
+  <#if thumbnailUrlPath??>
+    "thumbnailUrlPath" : "${thumbnailUrlPrefix + thumbnailUrlPath}",
+  </#if>
+  <#if previewUrlPath??>
+    "previewUrlPath" : "${previewUrlPrefix + previewUrlPath}",
+  </#if>
+
   <#assign propNames = properties?keys>
   "aspects" : [
     <#list aspects as aspect>

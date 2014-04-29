@@ -112,6 +112,8 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
     model.put("path", path);
     model.put("contentUrlPrefix", contentUrlPrefix);
     model.put("shareUrlPrefix", shareUrlPrefix);
+    model.put("thumbnailUrlPrefix", shareUrlPrefix);
+    model.put("previewUrlPrefix", shareUrlPrefix);
 
     //Calculating the contentUrlPath and adding it only if the contentType is child of cm:content
     boolean isContentAware = isContentAware(nodeRef);
@@ -128,6 +130,22 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
           nodeRef.toString());
       model.put("shareUrlPath", shareUrlPath);
     }
+
+    String thumbnailUrlPath = String.format(
+        "/api/node/%s/%s/%s/content/thumbnails/doclib?c=queue&ph=true&lastModified=1",
+        storeProtocol,
+        storeId,
+        uuid);
+    model.put("thumbnailUrlPath", thumbnailUrlPath);
+
+    String previewUrlPath = String.format(
+        "api/node/%s/%s/%s/content/thumbnails/webpreview",
+        storeProtocol,
+        storeId,
+        uuid);
+    model.put("previewUrlPath", previewUrlPath);
+
+
     return model;
   }
 
@@ -206,6 +224,8 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
   private AclDAO aclDao;
   private String contentUrlPrefix;
   private String shareUrlPrefix;
+  private String previewUrlPrefix;
+  private String thumbnailUrlPrefix;
 
   public void setDictionaryService(DictionaryService dictionaryService) {
     this.dictionaryService = dictionaryService;
@@ -229,5 +249,13 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
 
   public void setShareUrlPrefix(String shareUrlPrefix) {
     this.shareUrlPrefix = shareUrlPrefix;
+  }
+
+  public void setPreviewUrlPrefix(String previewUrlPrefix) {
+    this.previewUrlPrefix = previewUrlPrefix;
+  }
+
+  public void setThumbnailUrlPrefix(String thumbnailUrlPrefix) {
+    this.thumbnailUrlPrefix = thumbnailUrlPrefix;
   }
 }
