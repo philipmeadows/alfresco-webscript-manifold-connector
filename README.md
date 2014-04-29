@@ -20,7 +20,6 @@ export MANIFOLD_HOME=$PWD/apache-manifoldcf-1.1.1
 java -jar $MANIFOLD_HOME/example/start.jar
 ```
 
-
 Install and run Solr 4.1.0
 ---
 ```
