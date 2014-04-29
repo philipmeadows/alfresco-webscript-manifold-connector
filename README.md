@@ -14,7 +14,7 @@ mvn install -Pamp-to-war (advised MAVEN_OPTS="-Xms256m -Xmx2G -XX:PermSize=300m"
 Install and run Manifold 1.1.1
 ---
 ```
-curl http://www.apache.org/dist/manifoldcf/apache-manifoldcf-1.1.1-bin.zip > manifold-bin-1.1.1.zip
+curl http://archive.apache.org/dist/manifoldcf/apache-manifoldcf-1.1.1-bin.zip > manifold-bin-1.1.1.zip
 unzip manifold-bin-1.1.1.zip
 export MANIFOLD_HOME=$PWD/apache-manifoldcf-1.1.1
 java -jar $MANIFOLD_HOME/example/start.jar
@@ -24,7 +24,7 @@ java -jar $MANIFOLD_HOME/example/start.jar
 Install and run Solr 4.1.0
 ---
 ```
-curl http://apache.rediris.es/lucene/solr/4.1.0/solr-4.1.0.zip > solr-4.1.0.zip
+curl http://archive.apache.org/dist/lucene/solr/4.1.0/solr-4.1.0.zip > solr-4.1.0.zip
 unzip solr-4.1.0.zip
 export SOLR_HOME=$PWD/solr-4.1.0
 java -jar $SOLR_HOME/example/start.jar
@@ -61,7 +61,7 @@ class="org.apache.manifoldcf.crawler.connectors.alfrescowebscripts.AlfrescoWebSc
 
 edit <code>$MANIFOLD_HOME/logging.ini</code> if you want to raise the default (WARN) Manifold log level
 
-create a new <code>conf</code> folder in <code>$MANIFOLD_HOME/example/lib</code> 
+create a new <code>conf</code> folder in <code>$MANIFOLD_HOME/example/lib</code>
 
 copy in the new <code>conf</code> folder all these files related to the keystore configuration of your Alfresco instance:
 ```
