@@ -19,9 +19,9 @@
     </modules>
 
     <scm>
-      <connection>scm:git:git@github.com:maoo/alfresco-hydra.git</connection>
-      <url>scm:git:git@github.com:maoo/alfresco-hydra.git</url>
-      <developerConnection>scm:git:git@github.com:maoo/alfresco-hydra.git</developerConnection>
+      <connection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</connection>
+      <url>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</url>
+      <developerConnection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</developerConnection>
       <tag>HEAD</tag>
     </scm>
 
