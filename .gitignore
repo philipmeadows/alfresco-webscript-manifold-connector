@@ -2,6 +2,7 @@
 *.iwr
 *.ipr
 *.iml
+*.iws
 target
 .classpath
 .project
