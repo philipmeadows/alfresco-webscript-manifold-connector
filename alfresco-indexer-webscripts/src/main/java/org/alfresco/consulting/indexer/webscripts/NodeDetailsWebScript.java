@@ -112,8 +112,8 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
     model.put("path", path);
     model.put("contentUrlPrefix", contentUrlPrefix);
     model.put("shareUrlPrefix", shareUrlPrefix);
-    model.put("thumbnailUrlPrefix", shareUrlPrefix);
-    model.put("previewUrlPrefix", shareUrlPrefix);
+    model.put("thumbnailUrlPrefix", thumbnailUrlPrefix);
+    model.put("previewUrlPrefix", previewUrlPrefix);
 
     //Calculating the contentUrlPath and adding it only if the contentType is child of cm:content
     boolean isContentAware = isContentAware(nodeRef);
@@ -139,7 +139,7 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
     model.put("thumbnailUrlPath", thumbnailUrlPath);
 
     String previewUrlPath = String.format(
-        "api/node/%s/%s/%s/content/thumbnails/webpreview",
+        "/api/node/%s/%s/%s/content/thumbnails/webpreview",
         storeProtocol,
         storeId,
         uuid);
