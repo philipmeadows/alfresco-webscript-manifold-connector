@@ -19,6 +19,37 @@ Project Structure
 - Alfresco Indexer Client - A Java API that wraps HTTP invocations to Alfresco Indexer Webscripts (similar to Alfresco Solr CoreTracker, the Alfresco API deployed into Apache Solr that invokes Alfresco Solr API against the repo and commits documents into Solr)
 - Manifold Connector - The Manifold Connector that registers Alfresco as a Manifold source; it depends on Alfresco Indexer Client
 
+Configuration
+---
+In alfresco-global.properties you must define the following properties:
+
+### Url Prefixes
+indexer.properties.url.template = http://localhost:8080/alfresco/service/node/details
+indexer.content.url.prefix = http://localhost:8080/alfresco/service
+indexer.share.url.prefix = http://localhost:8888/share
+indexer.preview.url.prefix = http://localhost:8080/alfresco/service
+indexer.thumbnail.url.prefix = http://localhost:8080/alfresco/service
+
+### Node Changes paging parameters
+indexer.changes.nodesperacl=10
+indexer.changes.nodespertxn=10
+
+### Node Changes allowed Node Types (whitelist)
+indexer.changes.allowedTypes={http://www.alfresco.org/model/content/1.0}content,{http://www.alfresco.org/model/content/1.0}folder
+
+Other examples of allowed types:
+
+* {http://www.alfresco.org/model/forum/1.0}topic
+* {http://www.alfresco.org/model/forum/1.0}post
+* {http://www.alfresco.org/model/content/1.0}person
+* {http://www.alfresco.org/model/content/1.0}link
+* {http://www.alfresco.org/model/calendar}calendar
+* {http://www.alfresco.org/model/calendar}calendarEvent
+* {http://www.alfresco.org/model/datalist/1.0}dataList
+* {http://www.alfresco.org/model/datalist/1.0}dataListItem (includes all sub-types, such as dl:task, dl:event and dl:issue)
+* {http://www.alfresco.org/model/blogintegration/1.0}blogDetails
+* {http://www.alfresco.org/model/blogintegration/1.0}blogPost
+
 Next
 ---
 - Index aspect with manifold-connector (adding boolean to enable/disable feature)
