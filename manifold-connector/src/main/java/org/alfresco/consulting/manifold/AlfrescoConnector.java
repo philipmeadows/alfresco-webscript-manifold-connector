@@ -72,7 +72,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     String storeId = getConfig(config, "storeid", "SpacesStore");
     String username = getConfig(config, "username", null);
     String password = getConfig(config, "password", null);
-    this.enableDocumentProcessing = new Boolean(getConfig(config, "enabledocumentprocessing", "true"));
+    this.enableDocumentProcessing = new Boolean(getConfig(config, "enabledocumentprocessing", "false"));
 
     alfrescoClient = new WebScriptsAlfrescoClient(protocol, hostname, endpoint,
             storeProtocol, storeId, username, password);
