@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.alfresco.consulting.indexer</groupId>
     <artifactId>alfresco-indexer-parent</artifactId>
-    <version>0.5.4</version>
+    <version>0.5.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <parent>
@@ -22,7 +22,7 @@
       <connection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</connection>
       <url>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</url>
       <developerConnection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</developerConnection>
-      <tag>alfresco-indexer-parent-0.5.4</tag>
+      <tag>HEAD</tag>
     </scm>
 
     <build>
