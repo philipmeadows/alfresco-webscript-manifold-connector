@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.alfresco.consulting.indexer</groupId>
+    <artifactId>alfresco-indexer-parent</artifactId>
+    <version>0.5.4-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <parent>
+      <groupId>org.alfresco.maven</groupId>
+      <artifactId>alfresco-sdk-parent</artifactId>
+      <version>1.1.1</version>
+    </parent>
+
+    <modules>
+      <module>alfresco-indexer-webscripts</module>
+      <module>alfresco-indexer-client</module>
+      <module>manifold-connector</module>
+    </modules>
+
+    <scm>
+      <connection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</connection>
+      <url>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</url>
+      <developerConnection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</developerConnection>
+      <tag>HEAD</tag>
+    </scm>
+
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.0</version>
+          <configuration>
+            <source>1.6</source>
+            <target>1.6</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.4.2</version>
+          <configuration>
+            <arguments>-Ppurge</arguments>
+            <goals>deploy</goals>
+          </configuration>
+        </plugin>
+      </plugins>
+    </build>
+
+    <distributionManagement>
+        <repository>
+          <id>alfresco-indexer-release</id>
+          <url>dav:https://repository-maoo.forge.cloudbees.com/release/</url>
+        </repository>
+        <snapshotRepository>
+          <id>alfresco-indexer-snapshot</id>
+          <url>dav:https://repository-maoo.forge.cloudbees.com/release/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <repositories>
+      <repository>
+        <!--<id>alfresco-public</id>-->
+        <!--<url>https://artifacts.alfresco.com/nexus/content/groups/public</url>-->
+        <id>alfresco-private</id>
+        <url>https://artifacts.alfresco.com/nexus/content/groups/private</url>
+      </repository>
+      <repository>
+        <id>alfresco-public-snapshots</id>
+        <url>https://artifacts.alfresco.com/nexus/content/groups/public-snapshots</url>
+        <snapshots>
+          <enabled>true</enabled>
+          <updatePolicy>daily</updatePolicy>
+        </snapshots>
+      </repository>
+    </repositories>
+
+</project>

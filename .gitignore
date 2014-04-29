@@ -1,11 +1,11 @@
-*.class
 .idea
 *.iwr
 *.ipr
 *.iml
-# Package Files #
+target
 .classpath
 .project
 target
-alfresco-instance/alf_data_dev
-alfresco-instance/alfresco.log*
+*.log
+*.log.*
+alf_data_dev
