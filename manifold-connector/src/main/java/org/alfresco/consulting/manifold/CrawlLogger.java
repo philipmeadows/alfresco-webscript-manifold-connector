@@ -28,7 +28,7 @@ class CrawlLogger extends BaseTable {
     if (dbInterface == null)
       return null;
 
-    IResultSet iResultSet = performQuery("select * from " + tableName + " where jobid=" + jobid + " order by time desc limit 1",
+    IResultSet iResultSet = performQuery("select * from " + tableName + " where jobid=" + jobid + " order by time desc",
             new ArrayList(), null, null);
 
     if (iResultSet.getRowCount() == 0)
