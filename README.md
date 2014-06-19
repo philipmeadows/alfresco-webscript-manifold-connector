@@ -9,6 +9,7 @@ Building this connector
 svn co http://svn.apache.org/repos/asf/manifoldcf/trunk/ manifoldcf
 cd manifoldcf
 mvn clean install -DskipTests -Dmaven.test.skip
+cd -
 git clone https://github.com/maoo/alfresco-webscript-manifold-connector.git
 cd alfresco-webscript-manifold-connector
 mvn clean install -DskipTests -Dmaven.test.skip
