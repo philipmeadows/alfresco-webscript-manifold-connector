@@ -3,7 +3,18 @@ alfresco-webscript-manifold-connector
 
 Alfresco WebScripts Solr API Repository Connector for Apache ManifoldCF
 
-Run Alfresco 4.2.c
+Building this connector
+---
+```
+svn co http://svn.apache.org/repos/asf/manifoldcf/trunk/ manifoldcf
+cd manifoldcf
+mvn clean install -DskipTests -Dmaven.test.skip
+git clone https://github.com/maoo/alfresco-webscript-manifold-connector.git
+cd alfresco-webscript-manifold-connector
+mvn clean install -DskipTests -Dmaven.test.skip
+```
+
+Running Alfresco 4.2.c
 ---
 ```
 cd alfresco-indexer-webscripts
