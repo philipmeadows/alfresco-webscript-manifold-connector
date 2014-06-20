@@ -18,6 +18,13 @@
       <module>manifold-connector</module>
     </modules>
 
+    <properties>
+      <alfresco.groupId>org.alfresco</alfresco.groupId>
+      <alfresco.version>4.2.f</alfresco.version>
+      <!--<mcf.version>1.1.1</mcf.version>-->
+       <mcf.version>1.7-SNAPSHOT</mcf.version>
+    </properties>
+
     <scm>
       <connection>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</connection>
       <url>scm:git:git@github.com:maoo/alfresco-webscript-manifold-connector.git</url>
