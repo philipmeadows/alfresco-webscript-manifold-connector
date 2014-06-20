@@ -5,8 +5,6 @@ import org.alfresco.consulting.indexer.client.AlfrescoClient;
 import org.alfresco.consulting.indexer.client.AlfrescoDownException;
 import org.alfresco.consulting.indexer.client.AlfrescoResponse;
 import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
-import org.alfresco.util.Pair;
-import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.core.interfaces.*;
@@ -14,7 +12,6 @@ import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
 import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
 import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
-import org.apache.manifoldcf.crawler.system.JobIdStealer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,6 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
@@ -40,16 +38,6 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
 
   void setClient(AlfrescoClient client) {
     alfrescoClient = client;
-  }
-
-  @Override
-  public void install(IThreadContext threadContext) throws ManifoldCFException {
-    new CrawlLogger(getDb(threadContext), DATABASE_TABLE).install();
-  }
-
-  @Override
-  public void deinstall(IThreadContext threadContext) throws ManifoldCFException {
-    new CrawlLogger(getDb(threadContext), DATABASE_TABLE).uninstall();
   }
 
   private IDBInterface getDb(IThreadContext threadContext) throws ManifoldCFException {
@@ -109,20 +97,16 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   }
 
   @Override
-  public void addSeedDocuments(ISeedingActivity activities,
-                               DocumentSpecification spec, long startTime, long endTime)
-          throws ManifoldCFException, ServiceInterruption {
+  public String addSeedDocumentsWithVersion(ISeedingActivity activities, Specification spec,
+                                              String lastSeedVersion, long seedTime, int jobMode) throws ManifoldCFException, ServiceInterruption {
     try {
-      CrawlLogger crawlLogger = new CrawlLogger(getDb(currentContext), DATABASE_TABLE);
+      StringTokenizer tokenizer = new StringTokenizer(lastSeedVersion,"|");
+      long lastTransactionId = 0;
+      long lastAclChangesetId = 0;
 
-      long lastTransactionId, lastAclChangesetId;
-      CrawlLog latestLog = crawlLogger.getLatestLog(JobIdStealer.stealId(activities));
-      if (latestLog == null) {
-        lastTransactionId = 0;
-        lastAclChangesetId = 0;
-      } else {
-        lastTransactionId = latestLog.last_tx_id;
-        lastAclChangesetId = latestLog.last_acl_id;
+      if (tokenizer.countTokens() == 2) {
+         lastTransactionId = new Long(tokenizer.nextToken());
+         lastAclChangesetId = new Long(tokenizer.nextToken());
       }
 
       logger.info("Starting from transaction id: {} and acl changeset id: {}", lastTransactionId, lastAclChangesetId);
@@ -149,7 +133,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
       } while (transactionIdsProcessed > 0 && aclChangesetsProcessed > 0);
 
       logger.info("Recording {} as last transaction id and {} as last changeset id", lastTransactionId, lastAclChangesetId);
-      crawlLogger.log(JobIdStealer.stealId(activities), lastTransactionId, lastAclChangesetId);
+      return lastTransactionId + "|" + lastAclChangesetId;
     } catch (AlfrescoDownException e) {
       throw new ManifoldCFException(e);
     }
