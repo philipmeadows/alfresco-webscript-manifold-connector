@@ -105,7 +105,7 @@ public class AlfrescoConnectorTest {
 
     ArgumentCaptor<RepositoryDocument> rd = ArgumentCaptor.forClass(RepositoryDocument.class);
     verify(activities)
-            .ingestDocument(eq(TestDocument.uuid), anyString(),
+            .ingestDocumentWithException(eq(TestDocument.uuid), anyString(),
                     eq(TestDocument.uuid), rd.capture());
 
     Iterator<String> i = rd.getValue().getFields();
@@ -127,7 +127,7 @@ public class AlfrescoConnectorTest {
     connector.processDocuments(new String[]{json}, null, activities, null, null, 0);
 
     verify(activities).deleteDocument(eq(TestDocument.uuid));
-    verify(activities, never()).ingestDocument(eq(TestDocument.uuid), anyString(), anyString(),
+    verify(activities, never()).ingestDocumentWithException(eq(TestDocument.uuid), anyString(), anyString(),
             any(RepositoryDocument.class));
 
   }

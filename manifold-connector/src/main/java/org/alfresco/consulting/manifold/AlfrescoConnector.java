@@ -156,7 +156,11 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         if (this.enableDocumentProcessing) {
           processMetaData(rd,uuid);
         }
-        activities.ingestDocument(String.valueOf(uuid), "", uuid, rd);
+        try {
+            activities.ingestDocumentWithException(String.valueOf(uuid), "", uuid, rd);
+        } catch (IOException e) {
+            throw new ManifoldCFException("Caught IOException while ingesting document with uuid: " + uuid);
+        }
       }
     }
   }
