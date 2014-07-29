@@ -126,7 +126,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         lastAclChangesetId = response.getLastAclChangesetId();
 
         logger.info("transaction_id={}, acl_changeset_id={}", lastTransactionId, lastAclChangesetId);
-      } while (transactionIdsProcessed > 0 && aclChangesetsProcessed > 0);
+      } while (transactionIdsProcessed > 0 || aclChangesetsProcessed > 0);
 
       logger.info("Recording {} as last transaction id and {} as last changeset id", lastTransactionId, lastAclChangesetId);
       return lastTransactionId + "|" + lastAclChangesetId;

@@ -1,5 +1,6 @@
 package org.alfresco.consulting.manifold;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -22,6 +23,7 @@ import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
 import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
+import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.apache.manifoldcf.crawler.system.SeedingActivity;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,11 +58,23 @@ public class AlfrescoConnectorTest {
     DocumentSpecification spec = new DocumentSpecification();
     long seedTime = 1;
     int jobMode = 0;
- 
-    connector.addSeedDocuments(activities, spec, "0|0", seedTime, jobMode);
+    String lastSeedVersion = "0|0";
+
+    connector.addSeedDocuments(activities, spec, lastSeedVersion, seedTime, jobMode);
 
     verify(client).fetchNodes(anyInt(), anyInt());
   }
+
+    @Test
+    public void addSeedDocumentsWithOnlyAclChangeSetsShouldRetreiveAllChanges() throws Exception {
+        when(client.fetchNodes(anyInt(), anyInt()))
+                .thenReturn(new AlfrescoResponse(0L, 1L))
+                .thenReturn(new AlfrescoResponse(0L, 2L))
+                .thenReturn(new AlfrescoResponse(0L, 2L));
+        String lastSeedVersion = connector.addSeedDocuments(mock(ISeedingActivity.class),
+                new DocumentSpecification(), "0|0", 0L, 0);
+        assertEquals("0|2", lastSeedVersion);
+    }
 
   @Test
   public void whenTheClientIsCalledItShouldUseThePreviouslySentLastTransactionId() throws
