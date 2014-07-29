@@ -14,8 +14,6 @@ import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
 import org.apache.manifoldcf.core.interfaces.ConfigParams;
-import org.apache.manifoldcf.core.interfaces.DBInterfaceFactory;
-import org.apache.manifoldcf.core.interfaces.IDBInterface;
 import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
 import org.apache.manifoldcf.core.interfaces.IPostParameters;
 import org.apache.manifoldcf.core.interfaces.IThreadContext;
@@ -32,7 +30,6 @@ import com.google.gson.Gson;
 
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
-  private static final String DATABASE_TABLE = "alfrescoconnector";
   private static final String ACTIVITY_FETCH = "fetch document";
   private static final String[] activitiesList = new String[]{ACTIVITY_FETCH};
   private AlfrescoClient alfrescoClient;
@@ -46,15 +43,6 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
 
   void setClient(AlfrescoClient client) {
     alfrescoClient = client;
-  }
-
-  private IDBInterface getDb(IThreadContext threadContext) throws ManifoldCFException {
-    if (threadContext == null)
-      return null;
-    return DBInterfaceFactory.make(threadContext,
-            org.apache.manifoldcf.crawler.system.ManifoldCF.getMasterDatabaseName(),
-            org.apache.manifoldcf.crawler.system.ManifoldCF.getMasterDatabaseUsername(),
-            org.apache.manifoldcf.crawler.system.ManifoldCF.getMasterDatabasePassword());
   }
 
   @Override
