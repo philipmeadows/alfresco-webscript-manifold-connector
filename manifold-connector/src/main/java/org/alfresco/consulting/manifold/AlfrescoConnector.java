@@ -1,20 +1,5 @@
 package org.alfresco.consulting.manifold;
 
-import com.google.gson.Gson;
-import org.alfresco.consulting.indexer.client.AlfrescoClient;
-import org.alfresco.consulting.indexer.client.AlfrescoDownException;
-import org.alfresco.consulting.indexer.client.AlfrescoResponse;
-import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
-import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
-import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
-import org.apache.manifoldcf.core.interfaces.*;
-import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
-import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
-import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
-import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -22,9 +7,29 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
+import org.alfresco.consulting.indexer.client.AlfrescoClient;
+import org.alfresco.consulting.indexer.client.AlfrescoDownException;
+import org.alfresco.consulting.indexer.client.AlfrescoResponse;
+import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
+import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
+import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
+import org.apache.manifoldcf.core.interfaces.ConfigParams;
+import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
+import org.apache.manifoldcf.core.interfaces.IPostParameters;
+import org.apache.manifoldcf.core.interfaces.IThreadContext;
+import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
+import org.apache.manifoldcf.core.interfaces.Specification;
+import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
+import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
+import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
+import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
-  private static final String DATABASE_TABLE = "alfrescoconnector";
   private static final String ACTIVITY_FETCH = "fetch document";
   private static final String[] activitiesList = new String[]{ACTIVITY_FETCH};
   private AlfrescoClient alfrescoClient;
@@ -38,15 +43,6 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
 
   void setClient(AlfrescoClient client) {
     alfrescoClient = client;
-  }
-
-  private IDBInterface getDb(IThreadContext threadContext) throws ManifoldCFException {
-    if (threadContext == null)
-      return null;
-    return DBInterfaceFactory.make(threadContext,
-            org.apache.manifoldcf.crawler.system.ManifoldCF.getMasterDatabaseName(),
-            org.apache.manifoldcf.crawler.system.ManifoldCF.getMasterDatabaseUsername(),
-            org.apache.manifoldcf.crawler.system.ManifoldCF.getMasterDatabasePassword());
   }
 
   @Override
@@ -97,7 +93,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   }
 
   @Override
-  public String addSeedDocumentsWithVersion(ISeedingActivity activities, Specification spec,
+  public String addSeedDocuments(ISeedingActivity activities, Specification spec,
                                               String lastSeedVersion, long seedTime, int jobMode) throws ManifoldCFException, ServiceInterruption {
     try {
       StringTokenizer tokenizer = new StringTokenizer(lastSeedVersion,"|");
@@ -130,7 +126,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         lastAclChangesetId = response.getLastAclChangesetId();
 
         logger.info("transaction_id={}, acl_changeset_id={}", lastTransactionId, lastAclChangesetId);
-      } while (transactionIdsProcessed > 0 && aclChangesetsProcessed > 0);
+      } while (transactionIdsProcessed > 0 || aclChangesetsProcessed > 0);
 
       logger.info("Recording {} as last transaction id and {} as last changeset id", lastTransactionId, lastAclChangesetId);
       return lastTransactionId + "|" + lastAclChangesetId;
@@ -160,7 +156,11 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         if (this.enableDocumentProcessing) {
           processMetaData(rd,uuid);
         }
-        activities.ingestDocument(String.valueOf(uuid), "", uuid, rd);
+        try {
+            activities.ingestDocumentWithException(String.valueOf(uuid), "", uuid, rd);
+        } catch (IOException e) {
+            throw new ManifoldCFException("Caught IOException while ingesting document with uuid: " + uuid);
+        }
       }
     }
   }
