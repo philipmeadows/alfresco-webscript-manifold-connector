@@ -1,6 +1,11 @@
 package org.alfresco.consulting.manifold;
 
-import com.google.gson.Gson;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import org.alfresco.consulting.indexer.client.AlfrescoClient;
 import org.alfresco.consulting.indexer.client.AlfrescoDownException;
@@ -8,7 +13,12 @@ import org.alfresco.consulting.indexer.client.AlfrescoResponse;
 import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
-import org.apache.manifoldcf.core.interfaces.*;
+import org.apache.manifoldcf.core.interfaces.ConfigParams;
+import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
+import org.apache.manifoldcf.core.interfaces.IPostParameters;
+import org.apache.manifoldcf.core.interfaces.IThreadContext;
+import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
+import org.apache.manifoldcf.core.interfaces.Specification;
 import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
 import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
@@ -16,12 +26,7 @@ import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.StringTokenizer;
+import com.google.gson.Gson;
 
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
@@ -30,6 +35,8 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   private AlfrescoClient alfrescoClient;
   private final Gson gson = new Gson();
   private Boolean enableDocumentProcessing = Boolean.TRUE;
+  
+  private static final String CONTENT_URL_PROPERTY = "contentUrlPath";
 
   @Override
   public int getConnectorModel() {
@@ -91,17 +98,20 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   public String addSeedDocuments(ISeedingActivity activities, Specification spec,
                                               String lastSeedVersion, long seedTime, int jobMode) throws ManifoldCFException, ServiceInterruption {
     try {
-      StringTokenizer tokenizer = new StringTokenizer(lastSeedVersion,"|");
       long lastTransactionId = 0;
       long lastAclChangesetId = 0;
+      
+      if(lastSeedVersion != null && !lastSeedVersion.isEmpty()){
+    	  StringTokenizer tokenizer = new StringTokenizer(lastSeedVersion,"|");
 
-      if (tokenizer.countTokens() == 2) {
-         lastTransactionId = new Long(tokenizer.nextToken());
-         lastAclChangesetId = new Long(tokenizer.nextToken());
+    	  if (tokenizer.countTokens() == 2) {
+    		  lastTransactionId = new Long(tokenizer.nextToken());
+    		  lastAclChangesetId = new Long(tokenizer.nextToken());
+    	  }
       }
-
+      
       logger.info("Starting from transaction id: {} and acl changeset id: {}", lastTransactionId, lastAclChangesetId);
-
+      
       long transactionIdsProcessed;
       long aclChangesetsProcessed;
       do {
@@ -152,6 +162,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
           processMetaData(rd,uuid);
         }
         try {
+        	logger.info("Ingesting with id: {}, URI {} and rd {}", String.valueOf(uuid), uuid, rd.getFileName());
 			activities.ingestDocumentWithException(String.valueOf(uuid), "", uuid, rd);
 		} catch (IOException e) {
 			throw new ManifoldCFException(
@@ -166,6 +177,11 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     for(String property : properties.keySet()) {
       Object propertyValue = properties.get(property);
       rd.addField(property,propertyValue.toString());
+    }
+    
+    String contentUrlPath = (String) properties.get(CONTENT_URL_PROPERTY);
+    if(contentUrlPath != null && !contentUrlPath.isEmpty()){
+    	rd.setBinary(alfrescoClient.fetchContent(contentUrlPath), 0L);
     }
   }
 

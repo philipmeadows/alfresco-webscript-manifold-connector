@@ -1,8 +1,15 @@
 package org.alfresco.consulting.indexer.client;
 
-import com.google.common.base.Strings;
-import com.google.common.io.CharStreams;
-import com.google.gson.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -14,14 +21,14 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.common.base.Strings;
+import com.google.common.io.CharStreams;
+import com.google.common.net.MediaType;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 
 public class WebScriptsAlfrescoClient implements AlfrescoClient {
   private static final String LAST_TXN_ID = "last_txn_id";
@@ -309,5 +316,22 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
       users.add(user);
     }
     return users;
+  }
+
+  @Override
+  public InputStream fetchContent(String contentUrlPath) {
+	  HttpGet httpGet = new HttpGet(contentUrlPath);
+	  httpGet.addHeader("Accept", MediaType.APPLICATION_BINARY.toString());
+	  if (useBasicAuthentication()) {
+		  httpGet.addHeader("Authorization", "Basic " + Base64.encodeBase64String(String.format("%s:%s", username, password).getBytes(Charset.forName("UTF-8"))));
+	  }
+
+	  CloseableHttpClient httpClient = HttpClients.createDefault();
+	  try {
+		HttpResponse response = httpClient.execute(httpGet);
+		return response.getEntity().getContent();
+	} catch (Exception e) {
+		throw new AlfrescoDownException("Alfresco appears to be down", e);
+	}
   }
 }

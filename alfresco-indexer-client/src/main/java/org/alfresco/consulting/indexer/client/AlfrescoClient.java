@@ -1,5 +1,6 @@
 package org.alfresco.consulting.indexer.client;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -36,4 +37,12 @@ public interface AlfrescoClient {
    * @return a list of {@link AlfrescoUser}
    */
   List<AlfrescoUser> fetchAllUsersAuthorities() throws AlfrescoDownException;
+  
+  /**
+   * Fetches Document Binary Content
+   * 
+   * @param contentUrlPath URL of the content
+   * @return Document Binary Content
+   */
+  InputStream fetchContent(String contentUrlPath);
 }
