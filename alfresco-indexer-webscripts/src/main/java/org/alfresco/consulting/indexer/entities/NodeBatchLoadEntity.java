@@ -6,12 +6,14 @@ import java.util.Set;
 public class NodeBatchLoadEntity extends org.alfresco.repo.domain.node.ibatis.NodeBatchLoadEntity {
   private Long minId;
   private Long maxId;
+  private String uuid;
   private Set<String> allowedTypes;
+  private Set<String> excludedNameExtension;
 
   //These input values will be set on all returned NodeEntity objects returned by iBatis mappers
   private String storeProtocol;
   private String storeIdentifier;
-
+  
   public Set<String> getAllowedTypes() {
     return allowedTypes;
   }
@@ -50,5 +52,21 @@ public class NodeBatchLoadEntity extends org.alfresco.repo.domain.node.ibatis.No
 
   public void setStoreIdentifier(String storeIdentifier) {
     this.storeIdentifier = storeIdentifier;
+  }
+  
+  public void setUuid(String uuid){
+      this.uuid=uuid;
+  }
+  
+  public String getUuid(){
+      return this.uuid;
+  }
+  
+  public void setExcludedNameExtension(Set<String> excludedNameExtension){
+      this.excludedNameExtension= excludedNameExtension;
+  }
+  
+  public Set<String> getExcludedNameExtension(){
+      return this.excludedNameExtension;
   }
 }

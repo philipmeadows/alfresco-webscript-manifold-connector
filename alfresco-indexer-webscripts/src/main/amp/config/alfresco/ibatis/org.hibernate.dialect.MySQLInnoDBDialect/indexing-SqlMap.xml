@@ -39,6 +39,18 @@
         #{item}
       </foreach> and
     </if>
+    <if test="excludedNameExtension != null">
+    	node.id not in
+		(
+			select n.id from alf_node n
+			join alf_node_properties np on np.node_id=n.id
+			join alf_qname qnp on qnp.id=np.qname_id and qnp.local_name='name' 
+			and 
+			<foreach item="extension" index="index" collection="excludedNameExtension" open="(" separator=" OR " close=")">
+				np.string_value like concat('%.', #{extension})
+			</foreach>
+		) and
+	</if>
     node.store_id = #{storeId} and
     acl.acl_change_set &gt; #{minId} and
     acl.acl_change_set &lt;= #{maxId}
@@ -74,9 +86,45 @@
         #{item}
       </foreach> and
     </if>
+    <if test="excludedNameExtension != null">
+    	node.id not in
+		(
+			select n.id from alf_node n
+			join alf_node_properties np on np.node_id=n.id
+			join alf_qname qnp on qnp.id=np.qname_id and qnp.local_name='name' 
+			and 
+			<foreach item="extension" index="index" collection="excludedNameExtension" open="(" separator=" OR " close=")">
+				np.string_value like concat('%.', #{extension})
+			</foreach>
+		) and
+	</if>
+    node.store_id = #{storeId} and
     node.transaction_id &gt; #{minId} and
     node.transaction_id &lt;= #{maxId}
     order by
     node.transaction_id ASC
+  </select>
+  
+  <select id="select_NodeIndexesByUuid" parameterType="NodeIndexLoad" resultMap="result_NodeIndex">
+    select
+    node.id             as id,
+    node.uuid           as uuid,
+    node.version        as version,
+    node.store_id       as store_id,
+    #{storeProtocol}             as protocol,
+    #{storeIdentifier}           as identifier,
+    qname.local_name    as type_name,
+    ns.uri              as type_namespace,
+    np.string_value         as node_name,
+    node.transaction_id as txn_id
+    
+    from alf_node node
+    left outer join alf_qname qname on node.type_qname_id = qname.id
+    left outer join alf_namespace ns on qname.ns_id = ns.id
+    
+    join alf_node_properties np on np.node_id=node.id
+    join alf_qname qnp on qnp.id=np.qname_id and qnp.local_name='name'
+    where
+    node.uuid = #{uuid}
   </select>
 </mapper>
