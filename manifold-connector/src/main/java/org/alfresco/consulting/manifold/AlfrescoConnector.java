@@ -214,7 +214,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     
     // Indexing Permissions
     @SuppressWarnings("unchecked")
-	List<String> permissions = (List<String>) properties.get(AUTHORITIES_PROPERTY);
+	List<String> permissions = (List<String>) properties.remove(AUTHORITIES_PROPERTY);
     rd.setSecurityACL(RepositoryDocument.SECURITY_TYPE_DOCUMENT,
     		permissions.toArray(new String[permissions.size()]));
   }
