@@ -36,6 +36,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   private Boolean enableDocumentProcessing = Boolean.TRUE;
   
   private static final String CONTENT_URL_PROPERTY = "contentUrlPath";
+  private static final String AUTHORITIES_PROPERTY = "readableAuthorities";
   
   // Static Fields
   private static final String FIELD_UUID = "uuid";
@@ -203,12 +204,19 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
       rd.addField(property,propertyValue.toString());
     }
     
+    // Document Binary Content
     String contentUrlPath = (String) properties.get(CONTENT_URL_PROPERTY);
     if(contentUrlPath != null && !contentUrlPath.isEmpty()){
     	InputStream binaryContent = alfrescoClient.fetchContent(contentUrlPath);
     	if(binaryContent != null) // Content-based Alfresco Document
     		rd.setBinary(binaryContent, 0L);
     }
+    
+    // Indexing Permissions
+    @SuppressWarnings("unchecked")
+	List<String> permissions = (List<String>) properties.get(AUTHORITIES_PROPERTY);
+    rd.setSecurityACL(RepositoryDocument.SECURITY_TYPE_DOCUMENT,
+    		permissions.toArray(new String[permissions.size()]));
   }
 
   @Override
