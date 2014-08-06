@@ -47,7 +47,7 @@
 			join alf_qname qnp on qnp.id=np.qname_id and qnp.local_name='name' 
 			and 
 			<foreach item="extension" index="index" collection="excludedNameExtension" open="(" separator=" OR " close=")">
-				np.string_value like ('%.' || #{extension})
+				np.string_value like ('%' || #{extension})
 			</foreach>
 		) and
 	</if>
