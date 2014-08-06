@@ -163,7 +163,12 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         activities.deleteDocument(uuid);
       } else {
         if (this.enableDocumentProcessing) {
-          processMetaData(rd,uuid);
+          try{
+          	processMetaData(rd,uuid);
+          }catch(AlfrescoDownException e){
+        	  logger.error("Invalid Document from Alfresco with ID {}", uuid, e);
+        	  continue; // No Metadata, No Content....skip document
+          }
         }
         try {
         	if(rd.getBinaryStream() == null){
@@ -180,7 +185,8 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     }
   }
 
-  private void processMetaData(RepositoryDocument rd, String uuid) throws ManifoldCFException {
+  private void processMetaData(RepositoryDocument rd,
+		  String uuid) throws ManifoldCFException, AlfrescoDownException {
     Map<String,Object> properties = alfrescoClient.fetchMetadata(uuid);
     for(String property : properties.keySet()) {
       Object propertyValue = properties.get(property);
