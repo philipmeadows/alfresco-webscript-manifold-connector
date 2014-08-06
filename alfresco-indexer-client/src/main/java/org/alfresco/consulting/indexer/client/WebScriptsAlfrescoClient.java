@@ -31,6 +31,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 public class WebScriptsAlfrescoClient implements AlfrescoClient {
+  private static final String FIELD_PROPERTIES = "properties";
+  
   private static final String LAST_TXN_ID = "last_txn_id";
   private static final String DOCS = "docs";
   private static final String LAST_ACL_CS_ID = "last_acl_changeset_id";
@@ -192,8 +194,7 @@ private HttpGet createGetRequest(String url) {
     @SuppressWarnings("unchecked")
     Map<String, Object> map = gson.fromJson(json, Map.class);
 
-    List<Map<String, String>> properties = extractPropertiesFieldFromMap(nodeUuid, map,
-            "properties");
+    List<Map<String, String>> properties = extractPropertiesFieldFromMap(nodeUuid, map);
 
     for (Map<String, String> e : properties) {
       map.put(e.get("name"), e.get("value"));
@@ -218,14 +219,14 @@ private HttpGet createGetRequest(String url) {
 
   @SuppressWarnings("unchecked")
   private List<Map<String, String>> extractPropertiesFieldFromMap(String nodeUuid,
-          Map<String, Object> map, String propertiesField) {
-    Object properties = map.remove(propertiesField);
+          Map<String, Object> map) {
+    Object properties = map.remove(FIELD_PROPERTIES);
     if(properties == null){
     	throw new AlfrescoDownException("No Properties Fetched for the Node " + nodeUuid);
     }
 
     if (!(properties instanceof List)) {
-      throw new AlfrescoDownException(propertiesField
+      throw new AlfrescoDownException(FIELD_PROPERTIES
               + " is not of type List, it is of type " + properties.getClass());
     }
     return (List<Map<String, String>>) properties;

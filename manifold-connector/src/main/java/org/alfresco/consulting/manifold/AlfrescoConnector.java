@@ -155,8 +155,10 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     for (String doc : documentIdentifiers) {
       // Calling again Alfresco API because Document's actions are lost from seeding method
       AlfrescoResponse response = alfrescoClient.fetchNode(doc);
-      if(response.getDocumentList().isEmpty()) // Not found seeded document. Could reflect an error in Alfresco
+      if(response.getDocumentList().isEmpty()){ // Not found seeded document. Could reflect an error in Alfresco
+    	  logger.error("Invalid Seeded Document from Alfresco with ID {}", doc);
     	  continue;
+      }
       Map<String, Object> map = response.getDocumentList().get(0); // Should be only one
       RepositoryDocument rd = new RepositoryDocument();
       String uuid = map.get(FIELD_UUID).toString();
