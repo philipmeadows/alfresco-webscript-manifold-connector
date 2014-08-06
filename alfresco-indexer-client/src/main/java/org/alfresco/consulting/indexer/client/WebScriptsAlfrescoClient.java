@@ -40,8 +40,11 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
   private static final String STORE_PROTOCOL = "store_protocol";
   private static final String USERNAME = "username";
   private static final String AUTHORITIES = "authorities";
+//  private static final String UUIDS = "uuids";
   private final Gson gson = new Gson();
   private final String changesUrl;
+//  private final String uuidsUrl;
+  private final String actionsUrl;
   private final String metadataUrl;
   private final String authoritiesUrl;
   private final String username;
@@ -58,6 +61,8 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
                                   String endpoint, String storeProtocol, String storeId, String username,
                                   String password) {
     changesUrl = String.format("%s://%s%s/node/changes/%s/%s", protocol, hostname, endpoint, storeProtocol, storeId);
+//    uuidsUrl = String.format("%s://%s%s/node/uuids/%s/%s", protocol, hostname, endpoint, storeProtocol, storeId);
+    actionsUrl = String.format("%s://%s%s/node/actions/%s/%s", protocol, hostname, endpoint, storeProtocol, storeId);
     metadataUrl = String.format("%s://%s%s/node/details/%s/%s", protocol, hostname, endpoint, storeProtocol, storeId);
     authoritiesUrl = String.format("%s://%s%s/api/node/auth/resolve/", protocol, hostname, endpoint);
     this.username = username;
@@ -66,27 +71,36 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
 
   @Override
   public AlfrescoResponse fetchNodes(long lastTransactionId,
-                                     long lastAclChangesetId) {
-    HttpResponse response;
-    try {
-      CloseableHttpClient httpClient = HttpClients.createDefault();
-      String urlWithParameter = String.format("%s?%s", changesUrl, urlParameters(lastTransactionId, lastAclChangesetId));
+		  long lastAclChangesetId) {
 
-      logger.debug("Hitting url: {}", urlWithParameter);
-
-      HttpGet httpGet = createGetRequest(urlWithParameter);
-      response = httpClient.execute(httpGet);
-      HttpEntity entity = response.getEntity();
-      AlfrescoResponse afResponse = fromHttpEntity(entity);
-      EntityUtils.consume(entity);
-      return afResponse;
-    } catch (IOException e) {
-      logger.warn("Failed to fetch nodes.", e);
-      throw new AlfrescoDownException("Alfresco appears to be down", e);
-    }
+	  String urlWithParameter = String.format("%s?%s", changesUrl, urlParameters(lastTransactionId, lastAclChangesetId));
+	  return getDocumentsActions(urlWithParameter);
   }
 
-  private HttpGet createGetRequest(String url) {
+  @Override
+  public AlfrescoResponse fetchNode(String nodeUuid) throws AlfrescoDownException {
+	  String urlWithParameter = String.format("%s/%s", actionsUrl, nodeUuid);
+	  return getDocumentsActions(urlWithParameter);
+  }
+  
+  private AlfrescoResponse getDocumentsActions(String url){
+	  CloseableHttpClient httpClient = HttpClients.createDefault();
+	  logger.debug("Hitting url: {}", url);
+
+	  try{
+		  HttpGet httpGet = createGetRequest(url);
+		  HttpResponse response = httpClient.execute(httpGet);
+		  HttpEntity entity = response.getEntity();
+		  AlfrescoResponse afResponse = fromHttpEntity(entity);
+		  EntityUtils.consume(entity);
+		  return afResponse;
+	  } catch (IOException e) {
+		  logger.warn("Failed to fetch nodes.", e);
+		  throw new AlfrescoDownException("Alfresco appears to be down", e);
+	  }
+  }
+
+private HttpGet createGetRequest(String url) {
     HttpGet httpGet = new HttpGet(url);
     httpGet.addHeader("Accept", "application/json");
     if (useBasicAuthentication()) {
@@ -128,6 +142,16 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
 
     return new AlfrescoResponse(lastTransactionId, lastAclChangesetId, storeId, storeProtocol, documents);
   }
+  
+//  private Collection<String> extractIDs(HttpEntity entity) throws IOException {
+//	  Collection<String> uuids = Sets.newHashSet();
+//	  Reader entityReader = new InputStreamReader(entity.getContent());
+//	  JsonObject responseObject = gson.fromJson(entityReader, JsonObject.class);
+//	  JsonArray array = responseObject.getAsJsonArray(UUIDS);
+//	  for(JsonElement nextId:array)
+//		  uuids.add(nextId.getAsString());
+//	  return uuids;
+//  }
 
   private long getStringAsLong(JsonObject responseObject, String key, long defaultValue) {
     String string = getString(responseObject, key);
@@ -159,16 +183,16 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
     }
     return new HashMap<String, Object>();
   }
-
+ 
   @Override
   public Map<String, Object> fetchMetadata(String nodeUuid)
           throws AlfrescoDownException {
-    String json = fetchMetadataJson(nodeUuid);
+	String json = fetchMetadataJson(nodeUuid);
 
     @SuppressWarnings("unchecked")
     Map<String, Object> map = gson.fromJson(json, Map.class);
 
-    List<Map<String, String>> properties = extractPropertiesFieldFromMap(map,
+    List<Map<String, String>> properties = extractPropertiesFieldFromMap(nodeUuid, map,
             "properties");
 
     for (Map<String, String> e : properties) {
@@ -193,9 +217,13 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
   }
 
   @SuppressWarnings("unchecked")
-  private List<Map<String, String>> extractPropertiesFieldFromMap(
+  private List<Map<String, String>> extractPropertiesFieldFromMap(String nodeUuid,
           Map<String, Object> map, String propertiesField) {
     Object properties = map.remove(propertiesField);
+    if(properties == null){
+    	throw new AlfrescoDownException("No Properties Fetched for the Node " + nodeUuid);
+    }
+
     if (!(properties instanceof List)) {
       throw new AlfrescoDownException(propertiesField
               + " is not of type List, it is of type " + properties.getClass());

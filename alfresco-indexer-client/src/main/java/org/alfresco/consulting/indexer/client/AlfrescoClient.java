@@ -16,7 +16,15 @@ public interface AlfrescoClient {
    */
   AlfrescoResponse fetchNodes(long lastTransactionId, long lastAclChangesetId) throws
       AlfrescoDownException;
-
+  
+  /**
+   * Fetches Node Info from Alfresco for a given node.
+   * @param nodeUuid the UUID for the node
+   * @return an {@link AlfrescoResponse}
+   * @throws AlfrescoDownException
+   */
+  AlfrescoResponse fetchNode(String nodeUuid) throws AlfrescoDownException;
+  
   /**
    * Fetches metadata from Alfresco for a given node.
    * @param nodeUuid

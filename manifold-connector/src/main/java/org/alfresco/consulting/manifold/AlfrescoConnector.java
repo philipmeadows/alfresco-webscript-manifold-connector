@@ -1,6 +1,7 @@
 package org.alfresco.consulting.manifold;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -26,14 +27,13 @@ import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
+import com.sun.xml.messaging.saaj.util.ByteInputStream;
 
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
   private static final String ACTIVITY_FETCH = "fetch document";
   private static final String[] activitiesList = new String[]{ACTIVITY_FETCH};
   private AlfrescoClient alfrescoClient;
-  private final Gson gson = new Gson();
   private Boolean enableDocumentProcessing = Boolean.TRUE;
   
   private static final String CONTENT_URL_PROPERTY = "contentUrlPath";
@@ -118,8 +118,10 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         final AlfrescoResponse response = alfrescoClient.fetchNodes(lastTransactionId, lastAclChangesetId);
         int count = 0;
         for (Map<String, Object> doc : response.getDocuments()) {
-          String json = gson.toJson(doc);
-          activities.addSeedDocument(json);
+//          String json = gson.toJson(doc);
+//          activities.addSeedDocument(json);
+          String uuid = doc.get("uuid").toString();
+          activities.addSeedDocument(uuid);
           count++;
         }
         logger.info("Fetched and added {} seed documents", count);
@@ -141,15 +143,17 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void processDocuments(String[] documentIdentifiers, String[] versions,
                                IProcessActivity activities, DocumentSpecification spec,
                                boolean[] scanOnly, int jobMode) throws ManifoldCFException,
           ServiceInterruption {
     for (String doc : documentIdentifiers) {
-      Map<String, Object> map = gson.fromJson(doc, Map.class);
+      // Calling again Alfresco API because Document's actions are lost from seeding method
+      AlfrescoResponse response = alfrescoClient.fetchNode(doc);
+      Map<String, Object> map = response.getDocumentList().get(0); // Should be only one
       RepositoryDocument rd = new RepositoryDocument();
       String uuid = map.get("uuid").toString();
+      String nodeRef = map.get("nodeRef").toString();
       rd.setFileName(uuid);
       for (Entry<String, Object> e : map.entrySet()) {
         rd.addField(e.getKey(), e.getValue().toString());
@@ -162,8 +166,12 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
           processMetaData(rd,uuid);
         }
         try {
-        	logger.info("Ingesting with id: {}, URI {} and rd {}", String.valueOf(uuid), uuid, rd.getFileName());
-			activities.ingestDocumentWithException(String.valueOf(uuid), "", uuid, rd);
+        	if(rd.getBinaryStream() == null){
+        		byte[] empty = new byte[0];
+        		rd.setBinary(new ByteInputStream(empty, 0), 0L);
+        	}
+        	logger.info("Ingesting with id: {}, URI {} and rd {}", uuid, nodeRef, rd.getFileName());
+			activities.ingestDocumentWithException(uuid, "", uuid, rd);
 		} catch (IOException e) {
 			throw new ManifoldCFException(
 					"Error Ingesting Document with ID " + String.valueOf(uuid), e);
@@ -181,7 +189,9 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     
     String contentUrlPath = (String) properties.get(CONTENT_URL_PROPERTY);
     if(contentUrlPath != null && !contentUrlPath.isEmpty()){
-    	rd.setBinary(alfrescoClient.fetchContent(contentUrlPath), 0L);
+    	InputStream binaryContent = alfrescoClient.fetchContent(contentUrlPath);
+    	if(binaryContent != null) // Content-based Alfresco Document
+    		rd.setBinary(binaryContent, 0L);
     }
   }
 
