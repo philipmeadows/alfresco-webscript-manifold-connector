@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.alfresco.consulting.indexer.client.AlfrescoClient;
@@ -37,6 +36,12 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   private Boolean enableDocumentProcessing = Boolean.TRUE;
   
   private static final String CONTENT_URL_PROPERTY = "contentUrlPath";
+  
+  // Static Fields
+  private static final String FIELD_UUID = "uuid";
+  private static final String FIELD_NODEREF = "nodeRef";
+  private static final String FIELD_TYPE = "type";
+  private static final String FIELD_NAME = "name";
 
   @Override
   public int getConnectorModel() {
@@ -152,12 +157,13 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
       AlfrescoResponse response = alfrescoClient.fetchNode(doc);
       Map<String, Object> map = response.getDocumentList().get(0); // Should be only one
       RepositoryDocument rd = new RepositoryDocument();
-      String uuid = map.get("uuid").toString();
-      String nodeRef = map.get("nodeRef").toString();
-      rd.setFileName(uuid);
-      for (Entry<String, Object> e : map.entrySet()) {
-        rd.addField(e.getKey(), e.getValue().toString());
-      }
+      String uuid = map.get(FIELD_UUID).toString();
+      String nodeRef = map.get(FIELD_NODEREF).toString();
+      rd.addField(FIELD_NODEREF, nodeRef);
+      String type = map.get(FIELD_TYPE).toString();
+      rd.addField(FIELD_TYPE, type);
+      String name = map.get(FIELD_NAME).toString();
+      rd.setFileName(name);
 
       if ((Boolean) map.get("deleted")) {
         activities.deleteDocument(uuid);
