@@ -16,8 +16,13 @@ public class IndexingDaoImpl {
 
   private static final String SELECT_NODES_BY_ACLS = "alfresco.index.select_NodeIndexesByAclChangesetId";
   private static final String SELECT_NODES_BY_TXNS = "alfresco.index.select_NodeIndexesByTransactionId";
+  private static final String SELECT_NODES_BY_UUID = "alfresco.index.select_NodeIndexesByUuid";
 
   protected static final Log logger = LogFactory.getLog(IndexingDaoImpl.class);
+  
+  private SqlSessionTemplate template;
+  private Set<String> allowedTypes;
+  private Set<String> excludedNameExtension;
 
   public List<NodeEntity> getNodesByAclChangesetId(Pair<Long, StoreRef> store, Long lastAclChangesetId, int maxResults) {
     StoreRef storeRef = store.getSecond();
@@ -34,6 +39,7 @@ public class IndexingDaoImpl {
     nodeLoadEntity.setMinId(lastAclChangesetId);
     nodeLoadEntity.setMaxId(lastAclChangesetId+maxResults);
     nodeLoadEntity.setAllowedTypes(this.allowedTypes);
+    nodeLoadEntity.setExcludedNameExtension(this.excludedNameExtension);
 
     return (List<NodeEntity>) template.selectList(SELECT_NODES_BY_ACLS, nodeLoadEntity, new RowBounds(0, Integer.MAX_VALUE));
   }
@@ -53,16 +59,34 @@ public class IndexingDaoImpl {
     nodeLoadEntity.setMinId(lastTransactionId);
     nodeLoadEntity.setMaxId(lastTransactionId+maxResults);
     nodeLoadEntity.setAllowedTypes(this.allowedTypes);
+    nodeLoadEntity.setExcludedNameExtension(this.excludedNameExtension);
 
     return (List<NodeEntity>) template.selectList(SELECT_NODES_BY_TXNS, nodeLoadEntity, new RowBounds(0, Integer.MAX_VALUE));
   }
+  
+  public NodeEntity getNodeByUuid(Pair<Long, StoreRef> store, String uuid) {
+      StoreRef storeRef = store.getSecond();
 
-  private SqlSessionTemplate template;
-  private Set<String> allowedTypes;
+      logger.debug("[getNodeByUuid] On Store "+storeRef.getProtocol()+"://"+storeRef.getIdentifier());
+
+      NodeBatchLoadEntity nodeLoadEntity = new NodeBatchLoadEntity();
+      nodeLoadEntity.setStoreId(store.getFirst());
+      nodeLoadEntity.setStoreProtocol(storeRef.getProtocol());
+      nodeLoadEntity.setStoreIdentifier(storeRef.getIdentifier());
+      nodeLoadEntity.setUuid(uuid);
+
+      return (NodeEntity) template.selectOne(SELECT_NODES_BY_UUID, nodeLoadEntity);
+    }
+
+
   public void setSqlSessionTemplate(SqlSessionTemplate sqlSessionTemplate) {
     this.template = sqlSessionTemplate;
   }
   public void setAllowedTypes(Set<String> allowedTypes) {
     this.allowedTypes = allowedTypes;
+  }
+  
+  public void setExcludedNameExtension(Set<String> excludedNameExtension){
+      this.excludedNameExtension= excludedNameExtension;
   }
 }
