@@ -1,10 +1,10 @@
 package org.alfresco.consulting.manifold;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.StringTokenizer;
 
 import org.alfresco.consulting.indexer.client.AlfrescoClient;
@@ -26,17 +26,23 @@ import org.apache.manifoldcf.crawler.interfaces.ISeedingActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
+import com.sun.xml.messaging.saaj.util.ByteInputStream;
 
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
   private static final String ACTIVITY_FETCH = "fetch document";
   private static final String[] activitiesList = new String[]{ACTIVITY_FETCH};
   private AlfrescoClient alfrescoClient;
-  private final Gson gson = new Gson();
   private Boolean enableDocumentProcessing = Boolean.TRUE;
   
   private static final String CONTENT_URL_PROPERTY = "contentUrlPath";
+  private static final String AUTHORITIES_PROPERTY = "readableAuthorities";
+  
+  // Static Fields
+  private static final String FIELD_UUID = "uuid";
+  private static final String FIELD_NODEREF = "nodeRef";
+  private static final String FIELD_TYPE = "type";
+  private static final String FIELD_NAME = "name";
 
   @Override
   public int getConnectorModel() {
@@ -118,8 +124,10 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         final AlfrescoResponse response = alfrescoClient.fetchNodes(lastTransactionId, lastAclChangesetId);
         int count = 0;
         for (Map<String, Object> doc : response.getDocuments()) {
-          String json = gson.toJson(doc);
-          activities.addSeedDocument(json);
+//          String json = gson.toJson(doc);
+//          activities.addSeedDocument(json);
+          String uuid = doc.get("uuid").toString();
+          activities.addSeedDocument(uuid);
           count++;
         }
         logger.info("Fetched and added {} seed documents", count);
@@ -141,29 +149,45 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void processDocuments(String[] documentIdentifiers, String[] versions,
                                IProcessActivity activities, DocumentSpecification spec,
                                boolean[] scanOnly, int jobMode) throws ManifoldCFException,
           ServiceInterruption {
     for (String doc : documentIdentifiers) {
-      Map<String, Object> map = gson.fromJson(doc, Map.class);
-      RepositoryDocument rd = new RepositoryDocument();
-      String uuid = map.get("uuid").toString();
-      rd.setFileName(uuid);
-      for (Entry<String, Object> e : map.entrySet()) {
-        rd.addField(e.getKey(), e.getValue().toString());
+      // Calling again Alfresco API because Document's actions are lost from seeding method
+      AlfrescoResponse response = alfrescoClient.fetchNode(doc);
+      if(response.getDocumentList().isEmpty()){ // Not found seeded document. Could reflect an error in Alfresco
+    	  logger.error("Invalid Seeded Document from Alfresco with ID {}", doc);
+    	  continue;
       }
+      Map<String, Object> map = response.getDocumentList().get(0); // Should be only one
+      RepositoryDocument rd = new RepositoryDocument();
+      String uuid = map.get(FIELD_UUID).toString();
+      String nodeRef = map.get(FIELD_NODEREF).toString();
+      rd.addField(FIELD_NODEREF, nodeRef);
+      String type = map.get(FIELD_TYPE).toString();
+      rd.addField(FIELD_TYPE, type);
+      String name = map.get(FIELD_NAME).toString();
+      rd.setFileName(name);
 
       if ((Boolean) map.get("deleted")) {
         activities.deleteDocument(uuid);
       } else {
         if (this.enableDocumentProcessing) {
-          processMetaData(rd,uuid);
+          try{
+          	processMetaData(rd,uuid);
+          }catch(AlfrescoDownException e){
+        	  logger.error("Invalid Document from Alfresco with ID {}", uuid, e);
+        	  continue; // No Metadata, No Content....skip document
+          }
         }
         try {
-        	logger.info("Ingesting with id: {}, URI {} and rd {}", String.valueOf(uuid), uuid, rd.getFileName());
-			activities.ingestDocumentWithException(String.valueOf(uuid), "", uuid, rd);
+        	if(rd.getBinaryStream() == null){
+        		byte[] empty = new byte[0];
+        		rd.setBinary(new ByteInputStream(empty, 0), 0L);
+        	}
+        	logger.info("Ingesting with id: {}, URI {} and rd {}", uuid, nodeRef, rd.getFileName());
+			activities.ingestDocumentWithException(uuid, "", uuid, rd);
 		} catch (IOException e) {
 			throw new ManifoldCFException(
 					"Error Ingesting Document with ID " + String.valueOf(uuid), e);
@@ -172,17 +196,27 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     }
   }
 
-  private void processMetaData(RepositoryDocument rd, String uuid) throws ManifoldCFException {
+  private void processMetaData(RepositoryDocument rd,
+		  String uuid) throws ManifoldCFException, AlfrescoDownException {
     Map<String,Object> properties = alfrescoClient.fetchMetadata(uuid);
     for(String property : properties.keySet()) {
       Object propertyValue = properties.get(property);
       rd.addField(property,propertyValue.toString());
     }
     
+    // Document Binary Content
     String contentUrlPath = (String) properties.get(CONTENT_URL_PROPERTY);
     if(contentUrlPath != null && !contentUrlPath.isEmpty()){
-    	rd.setBinary(alfrescoClient.fetchContent(contentUrlPath), 0L);
+    	InputStream binaryContent = alfrescoClient.fetchContent(contentUrlPath);
+    	if(binaryContent != null) // Content-based Alfresco Document
+    		rd.setBinary(binaryContent, 0L);
     }
+    
+    // Indexing Permissions
+    @SuppressWarnings("unchecked")
+	List<String> permissions = (List<String>) properties.remove(AUTHORITIES_PROPERTY);
+    rd.setSecurityACL(RepositoryDocument.SECURITY_TYPE_DOCUMENT,
+    		permissions.toArray(new String[permissions.size()]));
   }
 
   @Override

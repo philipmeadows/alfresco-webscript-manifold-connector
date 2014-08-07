@@ -68,10 +68,10 @@
 
     <repositories>
       <repository>
-        <!--<id>alfresco-public</id>-->
-        <!--<url>https://artifacts.alfresco.com/nexus/content/groups/public</url>-->
-        <id>alfresco-private</id>
-        <url>https://artifacts.alfresco.com/nexus/content/groups/private</url>
+        <id>alfresco-public</id>
+        <url>https://artifacts.alfresco.com/nexus/content/groups/public</url>
+        <!-- <id>alfresco-private</id>
+        <url>https://artifacts.alfresco.com/nexus/content/groups/private</url> -->
       </repository>
       <repository>
         <id>alfresco-public-snapshots</id>

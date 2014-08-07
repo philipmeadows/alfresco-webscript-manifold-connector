@@ -1,10 +1,14 @@
 package org.alfresco.consulting.indexer.entities;
 
+import org.alfresco.consulting.indexer.entities.NodeEntity;
+
 public class NodeEntity extends org.alfresco.repo.domain.node.NodeEntity {
   private String typeName;
   private String typeNamespace;
   private Long aclChangesetId;
   private Long transactionId;
+  private String name;
+  
 
   @Override
   public int hashCode()
@@ -55,5 +59,13 @@ public class NodeEntity extends org.alfresco.repo.domain.node.NodeEntity {
 
   public void setTransactionId(Long transactionId) {
     this.transactionId = transactionId;
+  }
+  
+  public void setName(String name){
+      this.name=name;
+  }
+  
+  public String getName(){
+      return this.name;
   }
 }
