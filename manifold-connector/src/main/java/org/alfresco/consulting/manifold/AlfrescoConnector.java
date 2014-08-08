@@ -153,11 +153,16 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
                                IProcessActivity activities, DocumentSpecification spec,
                                boolean[] scanOnly, int jobMode) throws ManifoldCFException,
           ServiceInterruption {
+	int i = 0;  
     for (String doc : documentIdentifiers) {
+    
+      String nextVersion = versions[i++];	
+    	
       // Calling again Alfresco API because Document's actions are lost from seeding method
       AlfrescoResponse response = alfrescoClient.fetchNode(doc);
       if(response.getDocumentList().isEmpty()){ // Not found seeded document. Could reflect an error in Alfresco
     	  logger.error("Invalid Seeded Document from Alfresco with ID {}", doc);
+    	  activities.noDocument(doc, nextVersion);
     	  continue;
       }
       Map<String, Object> map = response.getDocumentList().get(0); // Should be only one
@@ -178,6 +183,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
           	processMetaData(rd,uuid);
           }catch(AlfrescoDownException e){
         	  logger.error("Invalid Document from Alfresco with ID {}", uuid, e);
+        	  activities.noDocument(doc, nextVersion);
         	  continue; // No Metadata, No Content....skip document
           }
         }
@@ -194,6 +200,15 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
 		}
       }
     }
+  }
+  
+  @Override
+  public String[] getDocumentVersions(String[] documentIdentifiers, DocumentSpecification spec)
+		    throws ManifoldCFException, ServiceInterruption{
+	  /* TODO Implement Document Version Stuff because now it is needed. Probably the best option is 
+	   * Document Identifier + Filtering Configuration
+	   */
+	  return super.getDocumentVersions(documentIdentifiers, spec);
   }
 
   private void processMetaData(RepositoryDocument rd,
