@@ -250,4 +250,31 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     ConfigurationHandler.viewConfiguration(threadContext, out, locale,
             parameters);
   }
+  
+  
+   @Override
+   public void outputSpecificationHeader(IHTTPOutput out, Locale locale, Specification os,
+     int connectionSequenceNumber, List<String> tabsArray)
+     throws ManifoldCFException, IOException{
+	   ConfigurationHandler.outputSpecificationHeader(out, locale, os, connectionSequenceNumber, tabsArray);
+   }
+   
+   @Override
+   public void outputSpecificationBody(IHTTPOutput out, Locale locale, Specification os,
+		    int connectionSequenceNumber, int actualSequenceNumber, String tabName) throws ManifoldCFException, IOException{
+	   ConfigurationHandler.outputSpecificationBody(out, locale, os, connectionSequenceNumber, actualSequenceNumber, tabName);
+   }
+   
+   @Override
+   public String processSpecificationPost(IPostParameters variableContext, Locale locale, Specification os,
+			  int connectionSequenceNumber) throws ManifoldCFException{
+	   return ConfigurationHandler.processSpecificationPost(variableContext, locale, os, connectionSequenceNumber);
+   }
+   
+   @Override
+   public void viewSpecification(IHTTPOutput out, Locale locale, Specification os,
+			  int connectionSequenceNumber) throws ManifoldCFException, IOException{
+	   ConfigurationHandler.viewSpecification(out, locale, os, connectionSequenceNumber);
+   }
+  
 }
