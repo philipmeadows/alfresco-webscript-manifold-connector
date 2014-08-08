@@ -9,6 +9,9 @@ public class NodeBatchLoadEntity extends org.alfresco.repo.domain.node.ibatis.No
   private String uuid;
   private Set<String> allowedTypes;
   private Set<String> excludedNameExtension;
+//  private Set<String> properties;
+  private Set<String> aspects;
+  private Set<String> mimeTypes;
 
   //These input values will be set on all returned NodeEntity objects returned by iBatis mappers
   private String storeProtocol;
@@ -68,5 +71,29 @@ public class NodeBatchLoadEntity extends org.alfresco.repo.domain.node.ibatis.No
   
   public Set<String> getExcludedNameExtension(){
       return this.excludedNameExtension;
+  }
+  
+//  public void setProperties(Set<String> properties){
+//      this.properties=properties;
+//  }
+//  
+//  public Set<String> getProperties(){
+//      return this.properties;
+//  }
+  
+  public void setAspects(Set<String> aspects){
+      this.aspects=aspects;
+  }
+  
+  public Set<String> getAspects(){
+      return this.aspects;
+  }
+  
+  public void setMimeTypes(Set<String> mimeTypes){
+      this.mimeTypes=mimeTypes;
+  }
+  
+  public Set<String> getMimeTypes(){
+      return this.mimeTypes;
   }
 }
