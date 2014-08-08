@@ -438,4 +438,16 @@ public class ConfigurationHandler {
 						  "</table>\n");
 	  }
   }
+  
+  public static String getSpecificationVersion(Specification os){
+	  StringBuilder builder = new StringBuilder();
+	  int i = 0;
+	  while(i < os.getChildCount()){
+		  SpecificationNode node = os.getChild(i);
+		  Collection<String> vars = SPECIFICATION_MAP.get(node.getType());
+		  for(String var:vars)
+			  builder.append(node.getAttributeValue(var)).append("+");
+	  }
+	  return builder.toString();
+  }
 }

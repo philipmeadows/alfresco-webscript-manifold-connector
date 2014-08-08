@@ -205,10 +205,10 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
   @Override
   public String[] getDocumentVersions(String[] documentIdentifiers, DocumentSpecification spec)
 		    throws ManifoldCFException, ServiceInterruption{
-	  /* TODO Implement Document Version Stuff because now it is needed. Probably the best option is 
-	   * Document Identifier + Filtering Configuration
-	   */
-	  return super.getDocumentVersions(documentIdentifiers, spec);
+	  String[] versions = new String[documentIdentifiers.length];
+	  for(int i = 0; i < documentIdentifiers.length; i++)
+		  versions[i] = ConfigurationHandler.getSpecificationVersion(spec) + documentIdentifiers[i];
+	  return versions;
   }
 
   private void processMetaData(RepositoryDocument rd,
