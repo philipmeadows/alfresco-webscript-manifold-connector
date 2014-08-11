@@ -41,10 +41,7 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
   
   private static final String URL_PARAM_LAST_TXN_ID = "lastTxnId";
   private static final String URL_PARAM_LAST_ACL_CS_ID = "lastAclChangesetId";
-  private static final String URL_PARAM_SITES_FILTER = "sitesFilter";
-  private static final String URL_PARAM_MIMETYPES_FILTER = "mimetypesFilter";
-  private static final String URL_PARAM_ASPECTS_FILTER = "aspectsFilter";
-  private static final String URL_PARAM_METADATA_FILTER = "metadataFilter";
+  private static final String URL_PARAM_INDEXING_FILTERS = "indexingFilters";
   
   private static final String STORE_ID = "store_id";
   private static final String STORE_PROTOCOL = "store_protocol";
@@ -127,13 +124,10 @@ private HttpGet createGetRequest(String url) {
   }
 
   private String urlParameters(long lastTransactionId, long lastAclChangesetId, AlfrescoFilters filters) {
-    String urlParameters = String.format("%s=%d&%s=%d&%s=%s&%s=%s&%s=%s&%s=%s",
+    String urlParameters = String.format("%s=%d&%s=%d&%s=%s",
     		URL_PARAM_LAST_TXN_ID, lastTransactionId,
     		URL_PARAM_LAST_ACL_CS_ID, lastAclChangesetId,
-    		URL_PARAM_SITES_FILTER, gson.toJson(filters.getSiteFilters()),
-    		URL_PARAM_MIMETYPES_FILTER, gson.toJson(filters.getMimetypeFilters()),
-    		URL_PARAM_ASPECTS_FILTER, gson.toJson(filters.getAspectFilters()),
-    		URL_PARAM_METADATA_FILTER, gson.toJson(filters.getMetadataFilters()));
+    		URL_PARAM_INDEXING_FILTERS, filters.toJSONString());
     try {
 		return URLEncoder.encode(urlParameters, "UTF-8");
 	} catch (UnsupportedEncodingException e) {
