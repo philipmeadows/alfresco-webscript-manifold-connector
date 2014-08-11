@@ -18,6 +18,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.springframework.extensions.webscripts.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.*;
 
 /**
@@ -56,7 +58,16 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     Integer maxTxns = (maxTxnsString == null ? maxNodesPerTxns : Integer.valueOf(maxTxnsString));
     Integer maxAclChangesets = (maxAclChangesetsString == null ? maxNodesPerAcl : Integer.valueOf(maxAclChangesetsString));
     
-    JSONObject indexingFilters= (JSONObject) JSONValue.parse(req.getParameter("indexingFilters"));
+    JSONObject indexingFilters=null;
+    try
+    {
+        indexingFilters = req.getParameter("indexingFilters")!=null ? 
+               (JSONObject) JSONValue.parse(URLDecoder.decode(req.getParameter("indexingFilters"),"UTF-8")): null;
+    }
+    catch (UnsupportedEncodingException e)
+    {
+        throw new WebScriptException(e.getMessage(),e);
+    }
     
     logger.debug(String.format("Invoking Changes Webscript, using the following params\n" +
         "lastTxnId: %s\n" +
