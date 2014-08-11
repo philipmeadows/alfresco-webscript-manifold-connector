@@ -2,8 +2,10 @@ package org.alfresco.consulting.indexer.webscripts;
 
 import org.alfresco.consulting.indexer.dao.IndexingDaoImpl;
 import org.alfresco.consulting.indexer.entities.NodeEntity;
+
 import freemarker.ext.beans.BeansWrapper;
 import freemarker.template.TemplateHashModel;
+
 import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.domain.node.NodeDAO;
 import org.alfresco.repo.domain.qname.QNameDAO;
@@ -12,6 +14,8 @@ import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.util.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.springframework.extensions.webscripts.*;
 
 import java.util.*;
@@ -51,13 +55,21 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     Long lastAclChangesetId = (lastAclChangesetIdString == null ? null : Long.valueOf(lastAclChangesetIdString));
     Integer maxTxns = (maxTxnsString == null ? maxNodesPerTxns : Integer.valueOf(maxTxnsString));
     Integer maxAclChangesets = (maxAclChangesetsString == null ? maxNodesPerAcl : Integer.valueOf(maxAclChangesetsString));
-
+    
+    JSONObject indexingFilters= (JSONObject) JSONValue.parse(req.getParameter("indexingFilters"));
+    
     logger.debug(String.format("Invoking Changes Webscript, using the following params\n" +
         "lastTxnId: %s\n" +
         "lastAclChangesetId: %s\n" +
         "storeId: %s\n" +
-        "storeProtocol: %s\n", lastTxnId, lastAclChangesetId, storeId, storeProtocol));
+        "storeProtocol: %s\n" +
+        "indexingFilters: %s\n", lastTxnId, lastAclChangesetId, storeId, storeProtocol, indexingFilters));
 
+    //Indexing filters
+    if(indexingFilters!=null){
+        setIndexingFilters(indexingFilters);
+    }
+    
     //Getting the Store ID on which the changes are requested
     Pair<Long,StoreRef> store = nodeDao.getStore(new StoreRef(storeProtocol, storeId));
     if(store == null)
@@ -111,6 +123,58 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     logger.debug(String.format("Attaching %s nodes to the WebScript template", nodes.size()));
 
     return model;
+  }
+
+  private void setIndexingFilters(JSONObject indexingParams)
+  {
+      
+      //Types filter
+      List<String> types= (List<String>) indexingParams.get("typesFilter");
+      
+      if(types!=null && types.size()>0){
+          this.indexingService.setAllowedTypes(new HashSet(types));
+      }
+      
+       //Site filter
+       List<String> sites= (List<String>) indexingParams.get("sitesFilter");
+      
+       if(sites!=null && sites.size()>0){
+           this.indexingService.setSites(new HashSet(sites));
+       }
+          
+       //Mymetype filter
+       List<String> mimetypes= (List<String>) indexingParams.get("mimetypesFilter");
+       
+       if(mimetypes!=null && mimetypes.size()>0){
+           this.indexingService.setMimeTypes(new HashSet(mimetypes));
+       }
+          
+       //Aspect filter
+       List<String> aspects= (List<String>) indexingParams.get("aspectsFilter");
+       
+       if(aspects!=null && aspects.size()>0){
+           this.indexingService.setAspects(new HashSet(aspects));
+       }
+          
+       //Metadata filter
+       Map<String,String> auxMap= (Map<String, String>) indexingParams.get("metadataFilter");
+       
+       if(auxMap!=null && auxMap.size()>0){
+           
+           Set<String> metadataParams= new HashSet<String>(auxMap.size());
+           Set<String> keys= auxMap.keySet();
+           StringBuilder sb= new StringBuilder();
+           
+           for(String key:keys){
+               sb.append(key).append(":").append(auxMap.get(key));
+               metadataParams.add(sb.toString());
+               //reset StringBuilder
+               sb.setLength(0);
+           }
+           this.indexingService.setProperties(metadataParams);
+       }
+      
+
   }
 
   private NamespaceService namespaceService;
