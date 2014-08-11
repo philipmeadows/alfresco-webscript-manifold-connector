@@ -50,9 +50,7 @@ public class ConfigurationHandler {
   /** Node describing an Aspect */
   public static final String NODE_ASPECT = "aspect";
   /** Attribute describing an aspect name */
-  public static final String ATTRIBUTE_ASPECT_SOURCE = "aspect_source";
-  /** Attribute describing an aspect value */
-  public static final String ATTRIBUTE_ASPECT_TARGET = "aspect_value";
+  public static final String ATTRIBUTE_ASPECT = "aspect_name";
   
   /** Node describing a Metadata */
   public static final String NODE_METADATA = "metadata";
@@ -65,8 +63,7 @@ public class ConfigurationHandler {
 	        ImmutableMultimap.<String, String>builder().
 	        put(NODE_SITE, ATTRIBUTE_SITE).
 	        put(NODE_MIMETYPE, ATTRIBUTE_MIMETYPE).
-	        put(NODE_ASPECT, ATTRIBUTE_ASPECT_SOURCE).
-	        put(NODE_ASPECT, ATTRIBUTE_ASPECT_TARGET).
+	        put(NODE_ASPECT, ATTRIBUTE_ASPECT).
 	        put(NODE_METADATA, ATTRIBUTE_METADATA_SOURCE).
 	        put(NODE_METADATA, ATTRIBUTE_METADATA_TARGET).build();
 
@@ -462,8 +459,7 @@ public class ConfigurationHandler {
 				filters.addMimetypeFilter(node.getAttributeValue(ATTRIBUTE_MIMETYPE));
 			else if(node.getType().equals(NODE_ASPECT))
 				filters.addAspectFilter(
-						node.getAttributeValue(ATTRIBUTE_ASPECT_SOURCE),
-						node.getAttributeValue(ATTRIBUTE_ASPECT_TARGET));
+						node.getAttributeValue(ATTRIBUTE_ASPECT));
 			else if(node.getType().equals(NODE_METADATA))
 				filters.addMetadataFilter(
 						node.getAttributeValue(ATTRIBUTE_METADATA_SOURCE),
