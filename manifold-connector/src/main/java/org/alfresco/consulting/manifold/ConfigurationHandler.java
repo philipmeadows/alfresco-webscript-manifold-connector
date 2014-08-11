@@ -465,7 +465,7 @@ public class ConfigurationHandler {
 						node.getAttributeValue(ATTRIBUTE_ASPECT_SOURCE),
 						node.getAttributeValue(ATTRIBUTE_ASPECT_TARGET));
 			else if(node.getType().equals(NODE_METADATA))
-				filters.addAspectFilter(
+				filters.addMetadataFilter(
 						node.getAttributeValue(ATTRIBUTE_METADATA_SOURCE),
 						node.getAttributeValue(ATTRIBUTE_METADATA_TARGET));
 		}
