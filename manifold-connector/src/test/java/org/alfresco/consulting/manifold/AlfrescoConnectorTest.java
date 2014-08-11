@@ -1,7 +1,9 @@
 package org.alfresco.consulting.manifold;
 
 import com.google.gson.Gson;
+
 import org.alfresco.consulting.indexer.client.AlfrescoClient;
+import org.alfresco.consulting.indexer.client.AlfrescoFilters;
 import org.alfresco.consulting.indexer.client.AlfrescoResponse;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
@@ -36,7 +38,7 @@ public class AlfrescoConnectorTest {
     connector = new AlfrescoConnector();
     connector.setClient(client);
 
-    when(client.fetchNodes(anyInt(), anyInt()))
+    when(client.fetchNodes(anyInt(), anyInt(), new AlfrescoFilters()))
             .thenReturn(new AlfrescoResponse(
                     0, 0, "", "", Collections.<Map<String, Object>>emptyList()));
   }
@@ -50,7 +52,7 @@ public class AlfrescoConnectorTest {
 
     connector.addSeedDocuments(activities, spec, startTime, endTime);
 
-    verify(client).fetchNodes(anyInt(), anyInt());
+    verify(client).fetchNodes(anyInt(), anyInt(), new AlfrescoFilters());
   }
 
   @Test
@@ -61,22 +63,22 @@ public class AlfrescoConnectorTest {
     long firstAclChangesetId = 0;
     long lastAclChangesetId = 5;
 
-    when(client.fetchNodes(anyInt(), anyInt()))
+    when(client.fetchNodes(anyInt(), anyInt(), new AlfrescoFilters()))
             .thenReturn(new AlfrescoResponse(
                     lastTransactionId, lastAclChangesetId));
 
     connector.addSeedDocuments(mock(SeedingActivity.class),
             new DocumentSpecification(), 0, 0);
-    verify(client, times(1)).fetchNodes(eq(firstTransactionId), eq(firstAclChangesetId));
+    verify(client, times(1)).fetchNodes(eq(firstTransactionId), eq(firstAclChangesetId), new AlfrescoFilters());
 
-    verify(client, times(1)).fetchNodes(eq(lastTransactionId), eq(lastAclChangesetId));
+    verify(client, times(1)).fetchNodes(eq(lastTransactionId), eq(lastAclChangesetId), new AlfrescoFilters());
   }
 
   @SuppressWarnings("unchecked")
   @Test
   public void whenADocumentIsReturnedItShouldBeAddedToManifold() throws Exception {
     TestDocument testDocument = new TestDocument();
-    when(client.fetchNodes(anyInt(), anyInt()))
+    when(client.fetchNodes(anyInt(), anyInt(), new AlfrescoFilters()))
             .thenReturn(new AlfrescoResponse(0, 0, "", "",
                     Arrays.<Map<String, Object>>asList(testDocument)));
 
@@ -96,7 +98,7 @@ public class AlfrescoConnectorTest {
 
     ArgumentCaptor<RepositoryDocument> rd = ArgumentCaptor.forClass(RepositoryDocument.class);
     verify(activities)
-            .ingestDocument(eq(TestDocument.uuid), anyString(),
+            .ingestDocumentWithException(eq(TestDocument.uuid), anyString(),
                     eq(TestDocument.uuid), rd.capture());
 
     Iterator<String> i = rd.getValue().getFields();
@@ -118,7 +120,7 @@ public class AlfrescoConnectorTest {
     connector.processDocuments(new String[]{json}, null, activities, null, null, 0);
 
     verify(activities).deleteDocument(eq(TestDocument.uuid));
-    verify(activities, never()).ingestDocument(eq(TestDocument.uuid), anyString(), anyString(),
+    verify(activities, never()).ingestDocumentWithException(eq(TestDocument.uuid), anyString(), anyString(),
             any(RepositoryDocument.class));
 
   }
