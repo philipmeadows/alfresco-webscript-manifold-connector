@@ -121,7 +121,10 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
       long transactionIdsProcessed;
       long aclChangesetsProcessed;
       do {
-        final AlfrescoResponse response = alfrescoClient.fetchNodes(lastTransactionId, lastAclChangesetId);
+        final AlfrescoResponse response = alfrescoClient.
+        		fetchNodes(lastTransactionId, 
+        				lastAclChangesetId,
+        				ConfigurationHandler.getFilters(spec));
         int count = 0;
         for (Map<String, Object> doc : response.getDocuments()) {
 //          String json = gson.toJson(doc);
@@ -148,7 +151,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     }
   }
 
-  @Override
+@Override
   public void processDocuments(String[] documentIdentifiers, String[] versions,
                                IProcessActivity activities, DocumentSpecification spec,
                                boolean[] scanOnly, int jobMode) throws ManifoldCFException,

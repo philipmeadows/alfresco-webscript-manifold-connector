@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.alfresco.consulting.indexer.client.AlfrescoFilters;
 import org.apache.commons.io.IOUtils;
 import org.apache.manifoldcf.core.i18n.Messages;
 import org.apache.manifoldcf.core.interfaces.ConfigParams;
@@ -450,4 +451,25 @@ public class ConfigurationHandler {
 	  }
 	  return builder.toString();
   }
+  
+  public static AlfrescoFilters getFilters(Specification spec) {
+		AlfrescoFilters filters = new AlfrescoFilters();
+		for(int i = 0; i < spec.getChildCount(); i++){
+			SpecificationNode node = spec.getChild(i);
+			if(node.getType().equals(NODE_SITE))
+				filters.addSiteFilter(node.getAttributeValue(ATTRIBUTE_SITE));
+			else if(node.getType().equals(NODE_MIMETYPE))
+				filters.addMimetypeFilter(node.getAttributeValue(ATTRIBUTE_MIMETYPE));
+			else if(node.getType().equals(NODE_ASPECT))
+				filters.addAspectFilter(
+						node.getAttributeValue(ATTRIBUTE_ASPECT_SOURCE),
+						node.getAttributeValue(ATTRIBUTE_ASPECT_TARGET));
+			else if(node.getType().equals(NODE_METADATA))
+				filters.addAspectFilter(
+						node.getAttributeValue(ATTRIBUTE_METADATA_SOURCE),
+						node.getAttributeValue(ATTRIBUTE_METADATA_TARGET));
+		}
+		
+		return filters;
+	}
 }
