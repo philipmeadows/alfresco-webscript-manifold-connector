@@ -129,35 +129,35 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
   {
       
       //Types filter
-      List<String> types= (List<String>) indexingParams.get("typesFilter");
+      List<String> types= (List<String>) indexingParams.get("typeFilters");
       
       if(types!=null && types.size()>0){
           this.indexingService.setAllowedTypes(new HashSet(types));
       }
       
        //Site filter
-       List<String> sites= (List<String>) indexingParams.get("sitesFilter");
+       List<String> sites= (List<String>) indexingParams.get("siteFilters");
       
        if(sites!=null && sites.size()>0){
            this.indexingService.setSites(new HashSet(sites));
        }
           
        //Mymetype filter
-       List<String> mimetypes= (List<String>) indexingParams.get("mimetypesFilter");
+       List<String> mimetypes= (List<String>) indexingParams.get("mimetypeFilters");
        
        if(mimetypes!=null && mimetypes.size()>0){
            this.indexingService.setMimeTypes(new HashSet(mimetypes));
        }
           
        //Aspect filter
-       List<String> aspects= (List<String>) indexingParams.get("aspectsFilter");
+       List<String> aspects= (List<String>) indexingParams.get("aspectFilters");
        
        if(aspects!=null && aspects.size()>0){
            this.indexingService.setAspects(new HashSet(aspects));
        }
           
        //Metadata filter
-       Map<String,String> auxMap= (Map<String, String>) indexingParams.get("metadataFilter");
+       Map<String,String> auxMap= (Map<String, String>) indexingParams.get("metadataFilters");
        
        if(auxMap!=null && auxMap.size()>0){
            
