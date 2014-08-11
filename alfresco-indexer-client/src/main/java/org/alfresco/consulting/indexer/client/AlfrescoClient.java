@@ -14,7 +14,7 @@ public interface AlfrescoClient {
    *         the id of the last transaction already being indexed; it can be considered a "startFrom" param
    * @return an {@link AlfrescoResponse}
    */
-  AlfrescoResponse fetchNodes(long lastTransactionId, long lastAclChangesetId) throws
+  AlfrescoResponse fetchNodes(long lastTransactionId, long lastAclChangesetId, AlfrescoFilters filters) throws
       AlfrescoDownException;
   
   /**

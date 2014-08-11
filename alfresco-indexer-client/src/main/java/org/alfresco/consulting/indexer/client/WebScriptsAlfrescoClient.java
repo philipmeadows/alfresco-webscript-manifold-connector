@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,11 +33,16 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 public class WebScriptsAlfrescoClient implements AlfrescoClient {
+  private static final String FIELD_PROPERTIES = "properties";
+  
   private static final String LAST_TXN_ID = "last_txn_id";
   private static final String DOCS = "docs";
   private static final String LAST_ACL_CS_ID = "last_acl_changeset_id";
+  
   private static final String URL_PARAM_LAST_TXN_ID = "lastTxnId";
   private static final String URL_PARAM_LAST_ACL_CS_ID = "lastAclChangesetId";
+  private static final String URL_PARAM_INDEXING_FILTERS = "indexingFilters";
+  
   private static final String STORE_ID = "store_id";
   private static final String STORE_PROTOCOL = "store_protocol";
   private static final String USERNAME = "username";
@@ -71,9 +78,12 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
 
   @Override
   public AlfrescoResponse fetchNodes(long lastTransactionId,
-		  long lastAclChangesetId) {
+		  long lastAclChangesetId,
+		  AlfrescoFilters filters) {
 
-	  String urlWithParameter = String.format("%s?%s", changesUrl, urlParameters(lastTransactionId, lastAclChangesetId));
+	  String urlWithParameter = String.format("%s?%s",
+			  changesUrl,
+			  urlParameters(lastTransactionId, lastAclChangesetId, filters));
 	  return getDocumentsActions(urlWithParameter);
   }
 
@@ -113,9 +123,16 @@ private HttpGet createGetRequest(String url) {
     return username != null && !"".equals(username) && password != null;
   }
 
-  private String urlParameters(long lastTransactionId, long lastAclChangesetId) {
-    // TODO: URL encode
-    return String.format("%s=%d&%s=%d", URL_PARAM_LAST_TXN_ID, lastTransactionId, URL_PARAM_LAST_ACL_CS_ID, lastAclChangesetId);
+  private String urlParameters(long lastTransactionId, long lastAclChangesetId, AlfrescoFilters filters) {
+    String urlParameters = String.format("%s=%d&%s=%d&%s=%s",
+    		URL_PARAM_LAST_TXN_ID, lastTransactionId,
+    		URL_PARAM_LAST_ACL_CS_ID, lastAclChangesetId,
+    		URL_PARAM_INDEXING_FILTERS, filters.toJSONString());
+    try {
+		return URLEncoder.encode(urlParameters, "UTF-8");
+	} catch (UnsupportedEncodingException e) {
+		return urlParameters;
+	}
   }
 
   private AlfrescoResponse fromHttpEntity(HttpEntity entity) throws IOException {
@@ -192,8 +209,7 @@ private HttpGet createGetRequest(String url) {
     @SuppressWarnings("unchecked")
     Map<String, Object> map = gson.fromJson(json, Map.class);
 
-    List<Map<String, String>> properties = extractPropertiesFieldFromMap(nodeUuid, map,
-            "properties");
+    List<Map<String, String>> properties = extractPropertiesFieldFromMap(nodeUuid, map);
 
     for (Map<String, String> e : properties) {
       map.put(e.get("name"), e.get("value"));
@@ -218,14 +234,14 @@ private HttpGet createGetRequest(String url) {
 
   @SuppressWarnings("unchecked")
   private List<Map<String, String>> extractPropertiesFieldFromMap(String nodeUuid,
-          Map<String, Object> map, String propertiesField) {
-    Object properties = map.remove(propertiesField);
+          Map<String, Object> map) {
+    Object properties = map.remove(FIELD_PROPERTIES);
     if(properties == null){
     	throw new AlfrescoDownException("No Properties Fetched for the Node " + nodeUuid);
     }
 
     if (!(properties instanceof List)) {
-      throw new AlfrescoDownException(propertiesField
+      throw new AlfrescoDownException(FIELD_PROPERTIES
               + " is not of type List, it is of type " + properties.getClass());
     }
     return (List<Map<String, String>>) properties;
