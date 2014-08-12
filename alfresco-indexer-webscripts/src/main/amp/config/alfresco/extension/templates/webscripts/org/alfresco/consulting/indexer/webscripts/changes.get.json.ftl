@@ -1,4 +1,6 @@
 {
+  <#if nodes??>"totalNodes" : "${nodes?size}",</#if> 
+  <#if time??>"elapsedTime" : "${elapsedTime}",</#if>
   "docs" : [
     <#list nodes as node>
       {

@@ -43,6 +43,9 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
   @Override
   protected Map<String, Object> executeImpl(WebScriptRequest req, Status status, Cache cache) {
 
+    //start time  
+    long startTime = System.currentTimeMillis();  
+      
     //Fetching request params
     Map<String, String> templateArgs = req.getServiceMatch().getTemplateVars();
     String storeId = templateArgs.get("storeId");
@@ -108,6 +111,9 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
       nodes.addAll(nodesFromAcls);
       lastAclChangesetId = nodesFromAcls.get(nodesFromAcls.size()-1).getAclChangesetId();
     }
+    
+    //elapsed time
+    long elapsedTime = System.currentTimeMillis() - startTime;
 
     //Render them out
     Map<String, Object> model = new HashMap<String, Object>(1, 1.0f);
@@ -119,6 +125,7 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     model.put("storeId", storeId);
     model.put("storeProtocol", storeProtocol);
     model.put("propertiesUrlTemplate", propertiesUrlTemplate);
+    model.put("elapsedTime", elapsedTime);
 
     //This allows to call the static method QName.createQName from the FTL template
     try {
