@@ -445,6 +445,7 @@ public class ConfigurationHandler {
 		  Collection<String> vars = SPECIFICATION_MAP.get(node.getType());
 		  for(String var:vars)
 			  builder.append(node.getAttributeValue(var)).append("+");
+		  i++;
 	  }
 	  return builder.toString();
   }
