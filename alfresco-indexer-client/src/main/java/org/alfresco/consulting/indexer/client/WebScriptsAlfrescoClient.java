@@ -124,15 +124,24 @@ private HttpGet createGetRequest(String url) {
   }
 
   private String urlParameters(long lastTransactionId, long lastAclChangesetId, AlfrescoFilters filters) {
-    String urlParameters = String.format("%s=%d&%s=%d&%s=%s",
+    
+      
+      String indexingFilters=null;
+      try
+      {
+          indexingFilters = URLEncoder.encode(filters.toJSONString(),"UTF-8");
+      }
+      catch (UnsupportedEncodingException e)
+      {
+          indexingFilters= filters.toJSONString();
+      }
+      
+      String urlParameters = String.format("%s=%d&%s=%d&%s=%s",
     		URL_PARAM_LAST_TXN_ID, lastTransactionId,
     		URL_PARAM_LAST_ACL_CS_ID, lastAclChangesetId,
-    		URL_PARAM_INDEXING_FILTERS, filters.toJSONString());
-    try {
-		return URLEncoder.encode(urlParameters, "UTF-8");
-	} catch (UnsupportedEncodingException e) {
+    		URL_PARAM_INDEXING_FILTERS, indexingFilters);
+
 		return urlParameters;
-	}
   }
 
   private AlfrescoResponse fromHttpEntity(HttpEntity entity) throws IOException {
