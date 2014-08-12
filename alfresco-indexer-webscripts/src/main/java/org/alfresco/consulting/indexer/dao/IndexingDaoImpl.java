@@ -126,42 +126,45 @@ public class IndexingDaoImpl
             filteredNodes= new ArrayList<NodeEntity>();
             
             for(NodeEntity node:nodes){
-
-                boolean shouldBeAdded=true;
-                NodeRef nodeRef= new NodeRef(node.getStore().getStoreRef(),node.getUuid());
                 
-                //Filter by site
-                if(filters.get("SITE")){
-                    String siteName=siteService.getSiteShortName(nodeRef);
-                    shouldBeAdded= siteName!=null && this.sites.contains(siteName);
-                }
-                
-                //Filter by properties
-                if(filters.get("PROPERTIES") && shouldBeAdded){
-                    for(String prop:this.properties){
-                        
-                        int pos=prop.lastIndexOf(":");
-                        String qName=null;
-                        String value=null;
-                        
-                        if(pos!=-1 && (prop.length()-1)>pos){
-                            qName=prop.substring(0, pos);
-                            value= prop.substring(pos+1,prop.length());
-                        }
-                        
-                        if(StringUtils.isEmpty(qName) || StringUtils.isEmpty(value)){
-                            //Invalid property
-                            continue;
-                        }
-                        
-                        Serializable rawValue= nodeService.getProperty(nodeRef, QName.createQName(qName));
-                        shouldBeAdded=shouldBeAdded && value.equals(rawValue);
-                        
+               boolean shouldBeAdded=true;
+               NodeRef nodeRef= new NodeRef(node.getStore().getStoreRef(),node.getUuid());
+                    
+               if(nodeService.exists(nodeRef)){
+                    
+                    //Filter by site
+                    if(filters.get("SITE")){
+                        String siteName=siteService.getSiteShortName(nodeRef);
+                        shouldBeAdded= siteName!=null && this.sites.contains(siteName);
                     }
-                }
-                
-                if(shouldBeAdded){
-                    filteredNodes.add(node);
+                    
+                    //Filter by properties
+                    if(filters.get("PROPERTIES") && shouldBeAdded){
+                        for(String prop:this.properties){
+                            
+                            int pos=prop.lastIndexOf(":");
+                            String qName=null;
+                            String value=null;
+                            
+                            if(pos!=-1 && (prop.length()-1)>pos){
+                                qName=prop.substring(0, pos);
+                                value= prop.substring(pos+1,prop.length());
+                            }
+                            
+                            if(StringUtils.isEmpty(qName) || StringUtils.isEmpty(value)){
+                                //Invalid property
+                                continue;
+                            }
+                            
+                            Serializable rawValue= nodeService.getProperty(nodeRef, QName.createQName(qName));
+                            shouldBeAdded=shouldBeAdded && value.equals(rawValue);
+                            
+                        }
+                    }
+                    
+                    if(shouldBeAdded){
+                        filteredNodes.add(node);
+                    }
                 }
             }
         }else{

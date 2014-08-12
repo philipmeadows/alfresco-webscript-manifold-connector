@@ -12,6 +12,7 @@ import org.alfresco.repo.domain.qname.QNameDAO;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.util.Pair;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.json.simple.JSONObject;
@@ -145,6 +146,12 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
 
   private void setIndexingFilters(JSONObject indexingParams)
   {
+      
+      //Reset filters
+      this.indexingService.setSites(Collections.<String> emptySet());
+      this.indexingService.setMimeTypes(Collections.<String> emptySet());
+      this.indexingService.setAspects(Collections.<String> emptySet());
+      this.indexingService.setProperties(Collections.<String> emptySet());
       
       //Types filter
       List<String> types= (List<String>) indexingParams.get("typeFilters");
