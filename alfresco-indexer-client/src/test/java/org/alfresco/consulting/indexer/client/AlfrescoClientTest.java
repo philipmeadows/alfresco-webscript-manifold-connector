@@ -79,7 +79,7 @@ public class AlfrescoClientTest {
         "\"last_txn_id\": 2," +
         "\"last_acl_changeset_id\": 2  } ");
 
-    AlfrescoResponse response = client.fetchNodes(0, 0);
+    AlfrescoResponse response = client.fetchNodes(0, 0, new AlfrescoFilters());
     List<Map<String, Object>> list = response.getDocumentList();
 
     Assert.assertEquals(1, list.size());
@@ -110,7 +110,7 @@ public class AlfrescoClientTest {
         "\"last_txn_id\": 2," +
         "\"last_acl_changeset_id\": 2  } ");
 
-    AlfrescoResponse response = client.fetchNodes(0, 0);
+    AlfrescoResponse response = client.fetchNodes(0, 0, new AlfrescoFilters());
     List<Map<String, Object>> list = response.getDocumentList();
 
     Assert.assertEquals(1, list.size());
@@ -131,7 +131,7 @@ public class AlfrescoClientTest {
         "\"last_txn_id\": 0," +
         "\"last_acl_changeset_id\": 0  } ");
 
-    AlfrescoResponse response = client.fetchNodes(0, 0);
+    AlfrescoResponse response = client.fetchNodes(0, 0, new AlfrescoFilters());
     assertTrue(response.getDocumentList().isEmpty());
   }
 
@@ -142,7 +142,7 @@ public class AlfrescoClientTest {
 
     long lastTransactionId = 0;
     long lastAclChangesetId = 0;
-    client.fetchNodes(lastTransactionId, 0);
+    client.fetchNodes(lastTransactionId, 0, new AlfrescoFilters());
     List<LoggedRequest> requests = WireMock.findAll(
         getRequestedFor(urlMatching(changesEndpoint)));
 
@@ -155,7 +155,7 @@ public class AlfrescoClientTest {
   public void whenAlfrescoIsDownAnExceptionShouldBeThrown() throws Exception {
     stubFor(get(urlMatching(changesEndpoint)).willReturn(aResponse().withFault(Fault.EMPTY_RESPONSE)));
 
-    AlfrescoResponse alfrescoResponse = client.fetchNodes(0, 0);
+    AlfrescoResponse alfrescoResponse = client.fetchNodes(0, 0, new AlfrescoFilters());
 
     assertNotNull("Response should never be null", alfrescoResponse);
   }
@@ -263,7 +263,7 @@ public class AlfrescoClientTest {
                 "\"last_acl_changeset_id\": 2 } ")));
 
     client = new WebScriptsAlfrescoClient("http", "localhost:8089", "/alfresco/service", STORE_PROTOCOL, STORE_ID, "username", "password");
-    AlfrescoResponse response = client.fetchNodes(0, 0);
+    AlfrescoResponse response = client.fetchNodes(0, 0, new AlfrescoFilters());
     List<Map<String, Object>> list = response.getDocumentList();
 
     Assert.assertEquals(1, list.size());

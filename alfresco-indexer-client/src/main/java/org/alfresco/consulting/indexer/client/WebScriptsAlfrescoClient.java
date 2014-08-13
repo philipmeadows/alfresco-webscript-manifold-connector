@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,8 +38,11 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
   private static final String LAST_TXN_ID = "last_txn_id";
   private static final String DOCS = "docs";
   private static final String LAST_ACL_CS_ID = "last_acl_changeset_id";
+  
   private static final String URL_PARAM_LAST_TXN_ID = "lastTxnId";
   private static final String URL_PARAM_LAST_ACL_CS_ID = "lastAclChangesetId";
+  private static final String URL_PARAM_INDEXING_FILTERS = "indexingFilters";
+  
   private static final String STORE_ID = "store_id";
   private static final String STORE_PROTOCOL = "store_protocol";
   private static final String USERNAME = "username";
@@ -73,9 +78,12 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
 
   @Override
   public AlfrescoResponse fetchNodes(long lastTransactionId,
-		  long lastAclChangesetId) {
+		  long lastAclChangesetId,
+		  AlfrescoFilters filters) {
 
-	  String urlWithParameter = String.format("%s?%s", changesUrl, urlParameters(lastTransactionId, lastAclChangesetId));
+	  String urlWithParameter = String.format("%s?%s",
+			  changesUrl,
+			  urlParameters(lastTransactionId, lastAclChangesetId, filters));
 	  return getDocumentsActions(urlWithParameter);
   }
 
@@ -115,9 +123,25 @@ private HttpGet createGetRequest(String url) {
     return username != null && !"".equals(username) && password != null;
   }
 
-  private String urlParameters(long lastTransactionId, long lastAclChangesetId) {
-    // TODO: URL encode
-    return String.format("%s=%d&%s=%d", URL_PARAM_LAST_TXN_ID, lastTransactionId, URL_PARAM_LAST_ACL_CS_ID, lastAclChangesetId);
+  private String urlParameters(long lastTransactionId, long lastAclChangesetId, AlfrescoFilters filters) {
+    
+      
+      String indexingFilters=null;
+      try
+      {
+          indexingFilters = URLEncoder.encode(filters.toJSONString(),"UTF-8");
+      }
+      catch (UnsupportedEncodingException e)
+      {
+          indexingFilters= filters.toJSONString();
+      }
+      
+      String urlParameters = String.format("%s=%d&%s=%d&%s=%s",
+    		URL_PARAM_LAST_TXN_ID, lastTransactionId,
+    		URL_PARAM_LAST_ACL_CS_ID, lastAclChangesetId,
+    		URL_PARAM_INDEXING_FILTERS, indexingFilters);
+
+		return urlParameters;
   }
 
   private AlfrescoResponse fromHttpEntity(HttpEntity entity) throws IOException {

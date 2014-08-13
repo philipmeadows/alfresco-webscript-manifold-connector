@@ -19,4 +19,5 @@
 
 <beans>
   <import resource="classpath:alfresco/module/${project.artifactId}/context/service-context.xml" />
+  <import resource="classpath:alfresco/module/${project.artifactId}/context/jmx-context.xml" />
 </beans>

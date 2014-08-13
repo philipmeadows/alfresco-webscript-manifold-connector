@@ -121,7 +121,10 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
       long transactionIdsProcessed;
       long aclChangesetsProcessed;
       do {
-        final AlfrescoResponse response = alfrescoClient.fetchNodes(lastTransactionId, lastAclChangesetId);
+        final AlfrescoResponse response = alfrescoClient.
+        		fetchNodes(lastTransactionId, 
+        				lastAclChangesetId,
+        				ConfigurationHandler.getFilters(spec));
         int count = 0;
         for (Map<String, Object> doc : response.getDocuments()) {
 //          String json = gson.toJson(doc);
@@ -139,7 +142,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
         lastAclChangesetId = response.getLastAclChangesetId();
 
         logger.info("transaction_id={}, acl_changeset_id={}", lastTransactionId, lastAclChangesetId);
-      } while (transactionIdsProcessed > 0 && aclChangesetsProcessed > 0);
+      } while (transactionIdsProcessed > 0 || aclChangesetsProcessed > 0);
 
       logger.info("Recording {} as last transaction id and {} as last changeset id", lastTransactionId, lastAclChangesetId);
       return lastTransactionId + "|" + lastAclChangesetId;
@@ -148,16 +151,21 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     }
   }
 
-  @Override
+@Override
   public void processDocuments(String[] documentIdentifiers, String[] versions,
                                IProcessActivity activities, DocumentSpecification spec,
                                boolean[] scanOnly, int jobMode) throws ManifoldCFException,
           ServiceInterruption {
+	int i = 0;  
     for (String doc : documentIdentifiers) {
+    
+      String nextVersion = versions[i++];	
+    	
       // Calling again Alfresco API because Document's actions are lost from seeding method
       AlfrescoResponse response = alfrescoClient.fetchNode(doc);
       if(response.getDocumentList().isEmpty()){ // Not found seeded document. Could reflect an error in Alfresco
     	  logger.error("Invalid Seeded Document from Alfresco with ID {}", doc);
+    	  activities.noDocument(doc, nextVersion);
     	  continue;
       }
       Map<String, Object> map = response.getDocumentList().get(0); // Should be only one
@@ -178,6 +186,7 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
           	processMetaData(rd,uuid);
           }catch(AlfrescoDownException e){
         	  logger.error("Invalid Document from Alfresco with ID {}", uuid, e);
+        	  activities.noDocument(doc, nextVersion);
         	  continue; // No Metadata, No Content....skip document
           }
         }
@@ -194,6 +203,15 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
 		}
       }
     }
+  }
+  
+  @Override
+  public String[] getDocumentVersions(String[] documentIdentifiers, DocumentSpecification spec)
+		    throws ManifoldCFException, ServiceInterruption{
+	  String[] versions = new String[documentIdentifiers.length];
+	  for(int i = 0; i < documentIdentifiers.length; i++)
+		  versions[i] = ConfigurationHandler.getSpecificationVersion(spec) + documentIdentifiers[i];
+	  return versions;
   }
 
   private void processMetaData(RepositoryDocument rd,
@@ -250,4 +268,31 @@ public class AlfrescoConnector extends BaseRepositoryConnector {
     ConfigurationHandler.viewConfiguration(threadContext, out, locale,
             parameters);
   }
+  
+  
+   @Override
+   public void outputSpecificationHeader(IHTTPOutput out, Locale locale, Specification os,
+     int connectionSequenceNumber, List<String> tabsArray)
+     throws ManifoldCFException, IOException{
+	   ConfigurationHandler.outputSpecificationHeader(out, locale, os, connectionSequenceNumber, tabsArray);
+   }
+   
+   @Override
+   public void outputSpecificationBody(IHTTPOutput out, Locale locale, Specification os,
+		    int connectionSequenceNumber, int actualSequenceNumber, String tabName) throws ManifoldCFException, IOException{
+	   ConfigurationHandler.outputSpecificationBody(out, locale, os, connectionSequenceNumber, actualSequenceNumber, tabName);
+   }
+   
+   @Override
+   public String processSpecificationPost(IPostParameters variableContext, Locale locale, Specification os,
+			  int connectionSequenceNumber) throws ManifoldCFException{
+	   return ConfigurationHandler.processSpecificationPost(variableContext, locale, os, connectionSequenceNumber);
+   }
+   
+   @Override
+   public void viewSpecification(IHTTPOutput out, Locale locale, Specification os,
+			  int connectionSequenceNumber) throws ManifoldCFException, IOException{
+	   ConfigurationHandler.viewSpecification(out, locale, os, connectionSequenceNumber);
+   }
+  
 }
