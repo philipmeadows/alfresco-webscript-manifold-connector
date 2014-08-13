@@ -29,6 +29,7 @@
   <bean id="indexingService"
         class="org.alfresco.consulting.indexer.dao.IndexingDaoImpl">
     <property name="sqlSessionTemplate" ref="indexingSqlSessionTemplate"/>
+    <property name="serviceRegistry" ref="ServiceRegistry" />
     <property name="allowedTypes">
       <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
         <constructor-arg type="java.lang.String" value="${indexer.changes.allowedTypes}"/>
@@ -37,6 +38,26 @@
     <property name="excludedNameExtension">
       <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
         <constructor-arg type="java.lang.String" value="${indexer.changes.excludedNameExtension}"/>
+      </bean>
+    </property>
+    <property name="properties">
+      <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
+        <constructor-arg type="java.lang.String" value="${indexer.changes.allowedProperties}"/>
+      </bean>
+    </property>
+    <property name="aspects">
+      <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
+        <constructor-arg type="java.lang.String" value="${indexer.changes.allowedAspects}"/>
+      </bean>
+    </property>
+    <property name="mimeTypes">
+      <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
+        <constructor-arg type="java.lang.String" value="${indexer.changes.allowedMimetypes}"/>
+      </bean>
+    </property>
+    <property name="sites">
+      <bean class="org.springframework.util.StringUtils" factory-method="commaDelimitedListToSet">
+        <constructor-arg type="java.lang.String" value="${indexer.changes.allowedSites}"/>
       </bean>
     </property>
   </bean>

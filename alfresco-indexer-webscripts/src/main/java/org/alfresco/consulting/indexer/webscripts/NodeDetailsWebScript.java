@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.alfresco.consulting.indexer.utils.Utils;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.domain.node.NodeDAO;
 import org.alfresco.repo.domain.permissions.Acl;
@@ -38,7 +39,7 @@ import com.google.gdata.util.common.base.StringUtil;
  * - Node metadata
  * - Node ACLs
  *
- * Please check src/main/amp/config/alfresco/extension/templates/webscripts/com/findwise/alfresco/details.get.desc.xml
+ * Please check src/main/amp/config/alfresco/extension/templates/webscripts/org/alfresco/consulting/indexer/webscripts/details.get.desc.xml
  * to know more about the RestFul interface to invoke the WebScript
  *
  * List of pending activities (or TODOs)
@@ -90,7 +91,7 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
     //Getting path and siteName
     Path pathObj = nodeService.getPath(nodeRef);
     String path = pathObj.toPrefixString(namespaceService);
-    String siteName = getSiteName(pathObj);
+    String siteName = Utils.getSiteName(pathObj);
 
     //Walk through ACLs and related ACEs, rendering out authority names having a granted permission on the node
     for (Acl acl : acls) {
@@ -120,16 +121,28 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
     if (isContentAware) {
       String contentUrlPath = String.format("/api/node/%s/%s/%s/content",storeProtocol,storeId,uuid);
       model.put("contentUrlPath", contentUrlPath);
+      
+      //Rendering out the (relative) URL path to Alfresco Share
+      String shareUrlPath = null;
+      
+      if (!StringUtil.isEmpty(siteName)) {
+          shareUrlPath = String.format(
+            "/page/site/%s/document-details?nodeRef=%s",
+            siteName,
+            nodeRef.toString());
+       
+      }else{
+          shareUrlPath = String.format(
+                  "/page/document-details?nodeRef=%s",
+                  nodeRef.toString());
+      }
+      
+      if(shareUrlPath!=null){
+          model.put("shareUrlPath", shareUrlPath);
+      }
     }
 
-    //Rendering out the (relative) URL path to Alfresco Share
-    if (!StringUtil.isEmpty(siteName)) {
-      String shareUrlPath = String.format(
-          "/page/site/%s/document-details?nodeRef=%s",
-          siteName,
-          nodeRef.toString());
-      model.put("shareUrlPath", shareUrlPath);
-    }
+
 
     String thumbnailUrlPath = String.format(
         "/api/node/%s/%s/%s/content/thumbnails/doclib?c=queue&ph=true&lastModified=1",
@@ -147,28 +160,6 @@ public class NodeDetailsWebScript extends DeclarativeWebScript {
 
 
     return model;
-  }
-
-  private String getSiteName(Path path) {
-    //Fetching Path and preparing for rendering
-    Iterator<Path.Element> pathIter = path.iterator();
-
-    //Scan the Path to find the Alfresco Site name
-    boolean siteFound = false;
-    while(pathIter.hasNext()) {
-      String pathElement = pathIter.next().getElementString();
-      //Stripping out namespace from PathElement
-      int firstChar = pathElement.lastIndexOf('}');
-      if (firstChar > 0) {
-        pathElement = pathElement.substring(firstChar+1);
-      }
-      if (pathElement.equals("sites")) {
-        siteFound = true;
-      } else if (siteFound) {
-        return pathElement;
-      }
-    }
-    return null;
   }
 
   private boolean isContentAware(NodeRef nodeRef) {
