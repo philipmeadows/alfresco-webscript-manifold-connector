@@ -9,9 +9,11 @@ import java.util.Set;
 
 import org.alfresco.consulting.indexer.entities.NodeBatchLoadEntity;
 import org.alfresco.consulting.indexer.entities.NodeEntity;
+import org.alfresco.consulting.indexer.utils.Utils;
 import org.alfresco.service.ServiceRegistry;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.repository.Path;
 import org.alfresco.service.cmr.repository.StoreRef;
 import org.alfresco.service.cmr.site.SiteService;
 import org.alfresco.service.namespace.QName;
@@ -28,11 +30,15 @@ public class IndexingDaoImpl
     private static final String SELECT_NODES_BY_ACLS = "alfresco.index.select_NodeIndexesByAclChangesetId";
     private static final String SELECT_NODES_BY_TXNS = "alfresco.index.select_NodeIndexesByTransactionId";
     private static final String SELECT_NODES_BY_UUID = "alfresco.index.select_NodeIndexesByUuid";
+    private static final String SELECT_LAST_TRANSACTION_ID = "select_LastTransactionID";
+    private static final String SELECT_LAST_ACL_CHANGE_SET_ID = "select_LastAclChangeSetID";
+    
+    private static final String SITES_FILTER="SITES";
+    private static final String PROPERTIES_FILTER="PROPERTIES";
 
     protected static final Log logger = LogFactory.getLog(IndexingDaoImpl.class);
 
     private SqlSessionTemplate template;
-    private SiteService siteService;
     private NodeService nodeService;
     
     private Set<String> allowedTypes;
@@ -110,6 +116,34 @@ public class IndexingDaoImpl
     }
     
     /**
+     * Get the last acl change set id from database
+     * 
+     * @return
+     */
+    public Long getLastAclChangeSetID(){
+        
+        if(logger.isDebugEnabled()){
+            logger.debug("[getLastAclChangeSetID]");
+        }
+        
+        return (Long) template.selectOne(SELECT_LAST_ACL_CHANGE_SET_ID);
+    }
+    
+    /**
+     * Get the last transaction id from database
+     * 
+     * @return
+     */
+    public Long getLastTransactionID(){
+        
+        if(logger.isDebugEnabled()){
+            logger.debug("[getLastTransactionID]");
+        }
+        
+        return (Long) template.selectOne(SELECT_LAST_TRANSACTION_ID);
+    }
+    
+    /**
      * Filter the nodes based on some parameters
      * @param nodes
      * @return
@@ -133,13 +167,14 @@ public class IndexingDaoImpl
                if(nodeService.exists(nodeRef)){
                     
                     //Filter by site
-                    if(filters.get("SITE")){
-                        String siteName=siteService.getSiteShortName(nodeRef);
+                    if(filters.get(SITES_FILTER)){
+                        Path pathObj = nodeService.getPath(nodeRef);
+                        String siteName = Utils.getSiteName(pathObj);
                         shouldBeAdded= siteName!=null && this.sites.contains(siteName);
                     }
                     
                     //Filter by properties
-                    if(filters.get("PROPERTIES") && shouldBeAdded){
+                    if(filters.get(PROPERTIES_FILTER) && shouldBeAdded){
                         for(String prop:this.properties){
                             
                             int pos=prop.lastIndexOf(":");
@@ -181,9 +216,9 @@ public class IndexingDaoImpl
     {
         Map<String,Boolean> filters= new HashMap<String, Boolean>(2);
         //Site filter
-        filters.put("SITE", this.sites!=null && this.sites.size() > 0);
+        filters.put(SITES_FILTER, this.sites!=null && this.sites.size() > 0);
         //Properties filter
-        filters.put("PROPERTIES", this.properties!=null && this.properties.size() > 0);
+        filters.put(PROPERTIES_FILTER, this.properties!=null && this.properties.size() > 0);
         
         return filters;
     }
@@ -194,7 +229,6 @@ public class IndexingDaoImpl
     }
     
     public void setServiceRegistry(ServiceRegistry serviceRegistry){
-        this.siteService=serviceRegistry.getSiteService();
         this.nodeService= serviceRegistry.getNodeService();
     }
 
@@ -258,5 +292,5 @@ public class IndexingDaoImpl
     {
         return this.sites;
     }
-
+    
 }

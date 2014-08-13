@@ -192,4 +192,21 @@
     where
     node.uuid = #{uuid}
   </select>
+  
+  <select id="select_LastTransactionID" resultType="long">
+	select 
+	id 
+	from alf_transaction 
+	order by id desc 
+	limit 1
+  </select>
+  
+  <select id="select_LastAclChangeSetID" resultType="long">
+	select 
+	id 
+	from alf_acl_change_set
+	order by id desc 
+	limit 1
+  </select>
+  
 </mapper>

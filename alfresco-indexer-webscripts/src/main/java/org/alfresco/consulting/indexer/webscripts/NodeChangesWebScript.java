@@ -29,7 +29,7 @@ import java.util.*;
  * - Node content
  * - Node ACLs
  *
- * Please check src/main/amp/config/alfresco/extension/templates/webscripts/com/findwise/alfresco/changes.get.desc.xml
+ * Please check src/main/amp/config/alfresco/extension/templates/webscripts/org/alfresco/consulting/indexer/webscripts/changes.get.desc.xml
  * to know more about the RestFul interface to invoke the WebScript
  *
  * List of pending activities (or TODOs)
@@ -101,16 +101,34 @@ public class NodeChangesWebScript extends DeclarativeWebScript {
     List<NodeEntity> nodesFromTxns = indexingService.getNodesByTransactionId(store, lastTxnId, maxTxns);
     if (nodesFromTxns != null && nodesFromTxns.size() > 0) {
       nodes.addAll(nodesFromTxns);
-      lastTxnId = nodesFromTxns.get(nodesFromTxns.size()-1).getTransactionId();
     }
+    
+    //Set the last database transaction ID or increment it by maxTxns
+    Long lastTxnIdDB= indexingService.getLastTransactionID();
 
+    if((lastTxnId+maxTxns) > lastTxnIdDB){
+        lastTxnId=lastTxnIdDB;
+    }else{
+        lastTxnId+=maxTxns;
+    }
+    
+    
+    
     if (lastAclChangesetId == null) {
       lastAclChangesetId = new Long(0);
     }
     List<NodeEntity> nodesFromAcls = indexingService.getNodesByAclChangesetId(store, lastAclChangesetId, maxAclChangesets);
     if (nodesFromAcls != null && nodesFromAcls.size() > 0) {
       nodes.addAll(nodesFromAcls);
-      lastAclChangesetId = nodesFromAcls.get(nodesFromAcls.size()-1).getAclChangesetId();
+    }
+    
+    //Set the last database aclChangeSet ID or increment it by maxAclChangesets
+    Long lastAclChangesetIdDB= indexingService.getLastAclChangeSetID();
+
+    if((lastAclChangesetId+maxAclChangesets) > lastAclChangesetIdDB){
+        lastAclChangesetId=lastAclChangesetIdDB;
+    }else{
+        lastAclChangesetId+=maxAclChangesets;
     }
     
     //elapsed time
