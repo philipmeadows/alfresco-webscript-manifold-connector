@@ -1,3 +1,6 @@
+> This code is deprecated.
+> Alfresco Indexer webscripts and client have been migrated into [alfresco-indexer](https://github.com/maoo/alfresco-indexer) and manifold-connector is now part of Apache ManifoldCF as [alfresco-webscript connector](http://svn.apache.org/repos/asf/manifoldcf/trunk/connectors/alfresco-webscript/)
+
 alfresco-webscript-manifold-connector
 =====================================
 
