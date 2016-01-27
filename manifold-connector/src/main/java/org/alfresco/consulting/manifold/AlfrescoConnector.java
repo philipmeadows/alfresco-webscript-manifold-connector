@@ -1,15 +1,24 @@
 package org.alfresco.consulting.manifold;
 
-import com.google.gson.Gson;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.alfresco.consulting.indexer.client.AlfrescoClient;
 import org.alfresco.consulting.indexer.client.AlfrescoDownException;
 import org.alfresco.consulting.indexer.client.AlfrescoResponse;
 import org.alfresco.consulting.indexer.client.WebScriptsAlfrescoClient;
-import org.alfresco.util.Pair;
-import org.apache.commons.lang.StringUtils;
 import org.apache.manifoldcf.agents.interfaces.RepositoryDocument;
 import org.apache.manifoldcf.agents.interfaces.ServiceInterruption;
-import org.apache.manifoldcf.core.interfaces.*;
+import org.apache.manifoldcf.core.interfaces.ConfigParams;
+import org.apache.manifoldcf.core.interfaces.DBInterfaceFactory;
+import org.apache.manifoldcf.core.interfaces.IDBInterface;
+import org.apache.manifoldcf.core.interfaces.IHTTPOutput;
+import org.apache.manifoldcf.core.interfaces.IPostParameters;
+import org.apache.manifoldcf.core.interfaces.IThreadContext;
+import org.apache.manifoldcf.core.interfaces.ManifoldCFException;
 import org.apache.manifoldcf.crawler.connectors.BaseRepositoryConnector;
 import org.apache.manifoldcf.crawler.interfaces.DocumentSpecification;
 import org.apache.manifoldcf.crawler.interfaces.IProcessActivity;
@@ -18,11 +27,7 @@ import org.apache.manifoldcf.crawler.system.JobIdStealer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.google.gson.Gson;
 
 public class AlfrescoConnector extends BaseRepositoryConnector {
   private static final Logger logger = LoggerFactory.getLogger(AlfrescoConnector.class);
