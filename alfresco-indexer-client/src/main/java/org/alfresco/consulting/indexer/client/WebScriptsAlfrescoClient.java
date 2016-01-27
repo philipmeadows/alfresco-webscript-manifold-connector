@@ -56,12 +56,6 @@ public class WebScriptsAlfrescoClient implements AlfrescoClient {
 
     private final Logger logger = LoggerFactory.getLogger(WebScriptsAlfrescoClient.class);
 
-    // Will return everything in the specified site: (from index to index,
-    // remove if not)
-    // https://dev-teamroom.scania.com/share/proxy/alfresco/node/changes/workspace/SpacesStore?reindexfrom=/app:company_home/st:sites/cm:fk&startIndex=0&toIndex=0
-    // Will return everything that is in ANY site:
-    // https://test-teamroom.scania.com/share/proxy/alfresco/node/changes/workspace/SpacesStore?reindexfrom=/app:company_home/st:sites&startIndex=0&toIndex=10
-
     public WebScriptsAlfrescoClient(String protocol, String hostname, String endpoint, String storeProtocol,
             String storeId) {
         this(protocol, hostname, endpoint, storeProtocol, storeId, null, null);
