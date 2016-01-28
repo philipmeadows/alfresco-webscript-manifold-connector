@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.alfresco.consulting.indexer</groupId>
     <artifactId>alfresco-indexer-parent</artifactId>
-    <version>0.5.5-SNAPSHOT</version>
+    <version>0.5.5</version>
     <packaging>pom</packaging>
 
     <parent>
