@@ -44,13 +44,13 @@ public class AlfrescoClientTest {
   private final String authoritiesEndpoint = "/alfresco/service/api/node/auth/resolve/";
 
   @Rule
-  public WireMockRule wireMockRule = new WireMockRule(8089);
+  public WireMockRule wireMockRule = new WireMockRule(8091);
 
   private AlfrescoClient client;
 
   @Before
   public void setup() {
-    client = new WebScriptsAlfrescoClient("http", "localhost:8089", "/alfresco/service",
+    client = new WebScriptsAlfrescoClient("http", "localhost:8091", "/alfresco/service",
         STORE_PROTOCOL, STORE_ID);
   }
 
@@ -262,7 +262,7 @@ public class AlfrescoClientTest {
                 "\"last_txn_id\": 2, "+
                 "\"last_acl_changeset_id\": 2 } ")));
 
-    client = new WebScriptsAlfrescoClient("http", "localhost:8089", "/alfresco/service", STORE_PROTOCOL, STORE_ID, "username", "password");
+    client = new WebScriptsAlfrescoClient("http", "localhost:8091", "/alfresco/service", STORE_PROTOCOL, STORE_ID, "username", "password");
     AlfrescoResponse response = client.fetchNodes(0, 0);
     List<Map<String, Object>> list = response.getDocumentList();
 
